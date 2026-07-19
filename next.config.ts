@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     unoptimized: false,
     formats: ["image/avif", "image/webp"],
   },
-  allowedDevOrigins: ["192.168.209.163", "127.0.0.*", "10.0.0.*", "10.0.1.*"],
+  allowedDevOrigins: ["192.168.209.163", "127.0.0.*"],
   typescript: {
     tsconfigPath: "./tsconfig.json",
   },

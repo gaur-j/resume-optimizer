@@ -1,32 +1,8 @@
-import { PDFParse } from "pdf-parse";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-/**
- * Extract text from PDF buffer
- */
-export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  let parser: PDFParse | null = null;
-
-  try {
-    parser = new PDFParse({ data: buffer });
-
-    const result = await parser.getText();
-
-    return result.text.trim();
-  } catch (error) {
-    console.error("PDF parsing error:", error);
-    throw new Error(
-      "Failed to extract text from PDF. Please ensure the file is a valid PDF."
-    );
-  } finally {
-    if (parser) {
-      await parser.destroy();
-    }
-  }
 }
 
 /**
