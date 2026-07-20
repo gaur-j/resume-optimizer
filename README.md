@@ -157,28 +157,31 @@ Open `http://localhost:3000`.
 
 ---
 
-## Roadmap
+# Roadmap
 
-### Phase 1
+## Phase 1 — MVP
+- Resume upload
+- Job description input
+- AI optimization
+- Export flow
 
-* Resume upload
-* Job description input
-* AI optimization
-* Export flow
+## Phase 2 — Product polish
+- Resume history
+- ATS scoring
+- Better UI/UX
+- Saved sessions
 
-### Phase 2
+## Phase 3 — Monetization
+- Free tier limits
+- Pro subscription
+- Payment integration
+- Usage analytics
 
-* Resume history
-* ATS score breakdown
-* Better formatting controls
-* More templates
-
-### Phase 3
-
-* Cover letter generator
-* LinkedIn profile optimizer
-* Application tracker
-* Interview prep
+## Phase 4 — Expansion
+- Cover letters
+- LinkedIn optimization
+- Application tracker
+- Recruiter tools
 
 ---
 
