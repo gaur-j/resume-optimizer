@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CreditsCard } from "@/components/dashboard/CreditsCard";
 import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
 import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
+import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
 import type { ATSAnalysis, BulletRewrite } from "@/types/analysis";
 
 interface AnalysisResults {
@@ -60,7 +61,7 @@ export default function DashboardPage() {
     e.preventDefault();
 
     if (!resumeText.trim() || !jobDescription.trim()) {
-      setError("Please fill in both resume and job description");
+      setError("Please add your resume and the job description first");
       return;
     }
 
@@ -117,12 +118,30 @@ export default function DashboardPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Resume
               </label>
+
+              <ResumeUploader
+                onExtracted={(text) => setResumeText(text)}
+                disabled={loading}
+              />
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-2 text-gray-400">
+                    or paste text directly
+                  </span>
+                </div>
+              </div>
+              {/* 
               <textarea
                 value={resumeText}
                 onChange={(e) => setResumeText(e.target.value)}
-                placeholder="Paste your resume text here..."
+                placeholder="Paste your resume text here, or upload a PDF above..."
                 className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              */}
             </div>
 
             <div>

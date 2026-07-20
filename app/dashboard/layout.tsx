@@ -28,8 +28,8 @@ export default async function DashboardLayout({
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.email}</span>
-            <form action="/auth/logout" method="post">
-              <Button variant="outline" size="sm">
+            <form action="/auth/logout" method="POST">
+              <Button variant="outline" size="sm" type="submit">
                 Logout
               </Button>
             </form>

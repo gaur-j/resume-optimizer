@@ -18,6 +18,8 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [authModal, setAuthModal] = useState<"login" | null>(null);
+
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -162,10 +164,39 @@ export default function SignupPage() {
 
       <p className="text-center text-gray-600 text-sm mt-6">
         Already have an account?{" "}
-        <Link href="/auth/login" className="text-blue-600 hover:underline">
+        <Button
+          type="button"
+          onClick={() => setAuthModal("login")}
+          className="text-blue-600 hover:underline bg-transparent border-none p-0 h-auto font-normal"
+          variant="ghost"
+        >
           Log in
-        </Link>
+        </Button>
       </p>
+      {/* Modal Overlay Logic - Matches your home.tsx implementation */}
+      {authModal === "login" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+          onClick={() => setAuthModal(null)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setAuthModal(null)}
+              className="absolute right-3 top-3 text-xl text-gray-500 hover:text-gray-700"
+              aria-label="Close auth modal"
+            >
+              ×
+            </button>
+            <div className="max-h-[80vh] overflow-y-auto">
+              <SignupPage />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
