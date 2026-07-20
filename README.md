@@ -4,7 +4,7 @@ Tailor your resume to a specific job description in minutes.
 
 Upload your resume, paste a job description, and get an ATS-friendly, role-specific version that improves keyword matching, readability, and impact.
 
-[Live Demo](#https://ai-resum-optimizer.vercel.app/) · [Documentation](#) · [Report Bug](#) · [Request Feature](#)
+[Live Demo](https://ai-resum-optimizer.vercel.app/) · [Documentation](#) · [Report Bug](#) · [Request Feature](#)
 
 ---
 
