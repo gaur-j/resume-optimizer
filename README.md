@@ -1,36 +1,221 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Resume Optimizer
 
-## Getting Started
+Tailor your resume to a specific job description in minutes.
 
-First, run the development server:
+Upload your resume, paste a job description, and get an ATS-friendly, role-specific version that improves keyword matching, readability, and impact.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+[Live Demo](#https://ai-resum-optimizer.vercel.app/) · [Documentation](#) · [Report Bug](#) · [Request Feature](#)
+
+---
+
+## Why this project exists
+
+Most resumes are too generic.
+
+That leads to:
+
+* weak ATS matching
+* poorly targeted bullet points
+* missed recruiter attention
+* wasted time rewriting the same resume for every job
+
+Resume Optimizer helps job seekers quickly turn one resume into many role-specific versions without starting from scratch.
+
+---
+
+## What it does
+
+* Parses uploaded resumes
+* Analyzes job descriptions
+* Suggests keyword and content improvements
+* Rewrites weak bullet points into stronger, impact-driven bullets
+* Produces a more ATS-friendly version
+* Supports export and reuse across applications
+
+---
+
+## Screenshots
+
+Add screenshots before launch.
+
+### Home
+
+![Home](./public/screenshots/home.png)
+
+### Upload Resume
+
+![Upload](./public/screenshots/upload.png)
+
+### Optimized Result
+
+![Result](./public/screenshots/result.png)
+
+---
+
+## How it works
+
+1. Upload your resume
+2. Paste a job description
+3. Review optimization suggestions
+4. Export the tailored resume
+5. Reuse it for that specific application
+
+---
+
+## Core features
+
+* Resume upload
+* Job description parsing
+* ATS-oriented optimization
+* Bullet rewriting
+* Keyword matching
+* Clear before/after improvements
+* Fast, simple UI
+* Mobile-friendly layout
+
+---
+
+## Tech stack
+
+* Next.js
+* TypeScript
+* React
+* Tailwind CSS
+* Node.js
+* AI service: add your provider here
+
+---
+
+## Project structure
+
+```bash id="7sbdq"
+app/          # Routes and pages
+components/   # Reusable UI components
+lib/          # Utilities and services
+public/       # Static assets
+types/        # Shared TypeScript types
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Getting started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Prerequisites
 
-## Learn More
+* Node.js 18+
+* npm, pnpm, or yarn
 
-To learn more about Next.js, take a look at the following resources:
+### Install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash id="k3waz"
+git clone https://github.com/gaur-j/resume-optimizer.git
+cd resume-optimizer
+npm install
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Environment variables
 
-## Deploy on Vercel
+Create a `.env.local` file:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash id="k9mde"
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+AI_API_KEY=your_api_key_here
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Run locally
+
+```bash id="0kq91"
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+---
+
+## Pricing
+
+### Free
+
+* limited resume optimizations
+* basic tailoring
+* standard export
+
+### Pro
+
+* unlimited optimizations
+* stronger AI rewrites
+* resume history
+* premium export options
+* job-specific tailoring
+
+### Team / Career Services
+
+* multi-user access
+* shared admin view
+* usage analytics
+* support for recruiters, bootcamps, or universities
+
+---
+
+## Roadmap
+
+### Phase 1
+
+* Resume upload
+* Job description input
+* AI optimization
+* Export flow
+
+### Phase 2
+
+* Resume history
+* ATS score breakdown
+* Better formatting controls
+* More templates
+
+### Phase 3
+
+* Cover letter generator
+* LinkedIn profile optimizer
+* Application tracker
+* Interview prep
+
+---
+
+## FAQ
+
+### Is my resume stored?
+
+Document the storage policy here.
+
+### Is this free?
+
+Add your free and paid limits here.
+
+### What file types are supported?
+
+Document supported formats here.
+
+### Does it help freshers?
+
+Yes. It should work for freshers and experienced candidates.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+See `CONTRIBUTING.md` before opening a pull request.
+
+---
+
+## Security
+
+If you find a security issue, report it privately through `SECURITY.md`.
+
+---
+
+## License
+
+Add a license before launch.
