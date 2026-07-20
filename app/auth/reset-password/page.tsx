@@ -43,12 +43,12 @@ export default function ResetPasswordPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+      <h2 className="text-xl font-semibold text-foreground mb-6">
         Set a new password
       </h2>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
         <div>
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             New password
           </label>
@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
         <div>
           <label
             htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Confirm new password
           </label>
@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full text-foreground hover:bg-primary/90"
           disabled={loading}
         >
           {loading ? "Updating..." : "Update password"}

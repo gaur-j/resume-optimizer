@@ -39,8 +39,10 @@ export function ResultsPanel({
   return (
     <div className="space-y-6">
       {/* Overall Score */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">ATS Score</h2>
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
+          ATS Score
+        </h2>
         <div className="flex justify-center mb-4">
           <div className="relative w-32 h-32">
             <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
@@ -79,8 +81,10 @@ export function ResultsPanel({
         {/* Section breakdown */}
         <div className="grid grid-cols-2 gap-3 mt-4">
           {Object.entries(atsAnalysis.sections).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs text-gray-500 capitalize mb-1">{key}</div>
+            <div key={key} className="bg-secondary rounded-lg p-3">
+              <div className="text-xs text-muted-foreground capitalize mb-1">
+                {key}
+              </div>
               <div className={`text-lg font-semibold ${scoreColor(value)}`}>
                 {value}
               </div>
@@ -90,8 +94,8 @@ export function ResultsPanel({
       </div>
 
       {/* Keyword Gap */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Keyword Match
         </h2>
         <div className="grid grid-cols-1 gap-4">
@@ -103,7 +107,7 @@ export function ResultsPanel({
               {atsAnalysis.matched_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full border border-green-200"
+                  className="text-xs bg-green-500/10 text-green-700 px-2 py-1 rounded-full border border-green-500/30"
                 >
                   {kw}
                 </span>
@@ -111,14 +115,14 @@ export function ResultsPanel({
             </div>
           </div>
           <div>
-            <div className="text-sm font-medium text-red-700 mb-2">
+            <div className="text-sm font-medium text-destructive mb-2">
               ✗ Missing ({atsAnalysis.missing_keywords.length})
             </div>
             <div className="flex flex-wrap gap-2">
               {atsAnalysis.missing_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200"
+                  className="text-xs bg-red-50 text-destructive px-2 py-1 rounded-full border border-red-200"
                 >
                   {kw}
                 </span>
@@ -131,19 +135,19 @@ export function ResultsPanel({
       {/* Critical Issues & Quick Wins */}
       {(atsAnalysis.critical_issues.length > 0 ||
         atsAnalysis.quick_wins.length > 0) && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Action Items
           </h2>
           {atsAnalysis.critical_issues.length > 0 && (
             <div className="mb-4">
-              <div className="text-sm font-medium text-red-700 mb-2">
+              <div className="text-sm font-medium text-destructive mb-2">
                 Critical Issues
               </div>
               <ul className="space-y-1">
                 {atsAnalysis.critical_issues.map((issue, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex gap-2">
-                    <span className="text-red-500">•</span> {issue}
+                  <li key={i} className="text-sm text-foreground flex gap-2">
+                    <span className="text-destructive">•</span> {issue}
                   </li>
                 ))}
               </ul>
@@ -151,13 +155,13 @@ export function ResultsPanel({
           )}
           {atsAnalysis.quick_wins.length > 0 && (
             <div>
-              <div className="text-sm font-medium text-blue-700 mb-2">
+              <div className="text-sm font-medium text-primary mb-2">
                 Quick Wins
               </div>
               <ul className="space-y-1">
                 {atsAnalysis.quick_wins.map((win, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex gap-2">
-                    <span className="text-blue-500">•</span> {win}
+                  <li key={i} className="text-sm text-foreground flex gap-2">
+                    <span className="text-primary">•</span> {win}
                   </li>
                 ))}
               </ul>
@@ -168,26 +172,28 @@ export function ResultsPanel({
 
       {/* Bullet Rewrites */}
       {bulletRewrites.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Suggested Rewrites
           </h2>
           <div className="space-y-4">
             {bulletRewrites.map((bullet, i) => (
-              <div key={i} className="border border-gray-100 rounded-lg p-3">
-                <div className="text-xs text-gray-400 mb-1">Original</div>
-                <div className="text-sm text-gray-500 line-through mb-3">
+              <div key={i} className="border border-border/50 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Original
+                </div>
+                <div className="text-sm text-muted-foreground line-through mb-3">
                   {bullet.original}
                 </div>
                 {bullet.rewritten_options.map((option, j) => (
                   <div
                     key={j}
-                    className="flex items-start justify-between gap-2 bg-green-50 rounded-lg p-3 mb-2 last:mb-0"
+                    className="flex items-start justify-between gap-2 bg-green-500/10 rounded-lg p-3 mb-2 last:mb-0"
                   >
-                    <p className="text-sm text-gray-800">{option}</p>
+                    <p className="text-sm text-foreground">{option}</p>
                     <button
                       onClick={() => copyBullet(option, i * 10 + j)}
-                      className="text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap flex-shrink-0"
+                      className="text-xs text-primary hover:text-primary-foreground whitespace-nowrap flex-shrink-0"
                     >
                       {copiedIndex === i * 10 + j ? "Copied!" : "Copy"}
                     </button>

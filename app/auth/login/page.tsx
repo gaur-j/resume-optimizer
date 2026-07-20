@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import SignupPage from "@/app/auth/signup/page";
 import Link from "next/link";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
@@ -45,12 +46,12 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+      <h2 className="text-xl font-semibold text-forgrouded mb-6">
         Sign in to your account
       </h2>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -59,10 +60,10 @@ export default function LoginPage() {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-gray-400">
+          <span className="bg-card px-2 text-muted-foreground">
             or continue with email
           </span>
         </div>
@@ -72,7 +73,7 @@ export default function LoginPage() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Email address
           </label>
@@ -91,13 +92,13 @@ export default function LoginPage() {
           <div className="flex justify-between items-center mb-1">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground"
             >
               Password
             </label>
             <Link
               href="/auth/forgot-password"
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Forgot password?
             </Link>
@@ -115,48 +116,36 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-primary hover:bg-primary/90"
           disabled={loading}
         >
           {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
-      <p className="text-center text-gray-600 text-sm mt-6">
+      <p className="text-center text-muted-foreground text-sm mt-6">
         Don&apos;t have an account?{" "}
         <Button
           type="button"
           onClick={() => setAuthModal("signup")}
-          className="text-blue-600 hover:underline bg-transparent border-none p-0 h-auto font-normal"
-          variant="ghost"
+          className="text-primary hover:underline bg-transparent border-none p-0 h-auto font-normal"
+          variant="link"
         >
           Sign up
         </Button>
       </p>
+
       {/* Modal Overlay Logic - Matches your home.tsx implementation */}
-      {authModal === "signup" && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
-          onClick={() => setAuthModal(null)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setAuthModal(null)}
-              className="absolute right-3 top-3 text-xl text-gray-500 hover:text-gray-700"
-              aria-label="Close auth modal"
-            >
-              ×
-            </button>
-            <div className="max-h-[80vh] overflow-y-auto">
-              <SignupPage />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={authModal === "signup"}
+        onOpenChange={(open) => {
+          if (!open) setAuthModal(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {authModal === "signup" && <SignupPage />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

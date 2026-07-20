@@ -33,22 +33,22 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+    <div className="max-w-md mx-auto mt-16 p-6 bg-card dark:bg-gray-800 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold text-foreground mb-2">
         Reset your password
       </h2>
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Enter your email and we&apos;ll send you a reset link.
       </p>
 
       {message && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+        <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-700 text-sm">
           {message}
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Email address
           </label>
@@ -74,15 +74,15 @@ export default function ForgotPasswordPage() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-primary hover:bg-primary/90"
           disabled={loading}
         >
           {loading ? "Sending..." : "Send reset link"}
         </Button>
       </form>
 
-      <p className="text-center text-gray-600 text-sm mt-6">
-        <Link href="/auth/login" className="text-blue-600 hover:underline">
+      <p className="text-center text-muted-foreground text-sm mt-6">
+        <Link href="/auth/login" className="text-primary hover:underline">
           ← Back to login
         </Link>
       </p>

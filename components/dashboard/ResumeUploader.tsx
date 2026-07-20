@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { CheckCircle2, FileText } from "lucide-react";
 
 interface ResumeUploaderProps {
   onExtracted: (text: string) => void;
@@ -97,13 +98,13 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
         onDrop={handleDrop}
         onClick={() => !disabled && inputRef.current?.click()}
         className={`
-          border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+          rounded-xl border-2 border-dashed p-8 text-center transition-all
           ${
             isDragging
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-gray-400"
+              ? "border-primary bg-primary/10 shadow-sm"
+              : "border-border hover:border-primary/50 hover:bg-muted/40"
           }
-          ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+          ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
         `}
       >
         <input
@@ -117,16 +118,18 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
 
         {status === "uploading" && (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-            <p className="text-sm text-gray-600">Reading {fileName}...</p>
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <p className="text-sm text-muted-foreground">
+              Reading {fileName}...
+            </p>
           </div>
         )}
 
         {status === "success" && (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-green-600 text-xl">✓</span>
-            <p className="text-sm text-gray-700 font-medium">{fileName}</p>
-            <p className="text-xs text-gray-500">
+            <CheckCircle2 className="h-6 w-6 text-green-600" />
+            <p className="text-sm text-foreground font-medium">{fileName}</p>
+            <p className="text-xs text-muted-foreground">
               Text extracted — review it below and edit if needed
             </p>
           </div>
@@ -134,17 +137,19 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
 
         {(status === "idle" || status === "error") && (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-2xl text-gray-400">📄</span>
-            <p className="text-sm text-gray-700 font-medium">
+            <FileText className="h-6 w-6 text-muted-foreground" />
+            <p className="text-sm text-foreground font-medium">
               Drop your resume PDF here, or click to browse
             </p>
-            <p className="text-xs text-gray-500">PDF only, up to 5MB</p>
+            <p className="text-xs text-muted-foreground">PDF only, up to 5MB</p>
           </div>
         )}
       </div>
 
       {status === "error" && error && (
-        <p className="text-sm text-red-600 mt-2">{error}</p>
+        <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
       )}
     </div>
   );

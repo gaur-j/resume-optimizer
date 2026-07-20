@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import LoginPage from "@/app/auth/login/page";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
@@ -67,18 +68,18 @@ export default function SignupPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
+      <h2 className="text-xl font-semibold text-foreground mb-6">
         Create your account
       </h2>
 
       {message && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+        <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-700 text-sm">
           {message}
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -87,10 +88,10 @@ export default function SignupPage() {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-gray-400">
+          <span className="bg-card px-2 text-xl text-muted-foreground">
             or sign up with email
           </span>
         </div>
@@ -100,7 +101,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Email address
           </label>
@@ -118,7 +119,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Password
           </label>
@@ -137,7 +138,7 @@ export default function SignupPage() {
         <div>
           <label
             htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-foreground mb-1"
           >
             Confirm password
           </label>
@@ -155,48 +156,35 @@ export default function SignupPage() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-primary hover:bg-primary/90"
           disabled={loading}
         >
           {loading ? "Creating account..." : "Create account"}
         </Button>
       </form>
 
-      <p className="text-center text-gray-600 text-sm mt-6">
+      <p className="text-center text-muted-foreground text-sm mt-6">
         Already have an account?{" "}
         <Button
           type="button"
+          variant="link"
           onClick={() => setAuthModal("login")}
-          className="text-blue-600 hover:underline bg-transparent border-none p-0 h-auto font-normal"
-          variant="ghost"
+          className="text-primary hover:underline bg-transparent border-none p-0 h-auto font-normal"
         >
           Log in
         </Button>
       </p>
       {/* Modal Overlay Logic - Matches your home.tsx implementation */}
-      {authModal === "login" && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
-          onClick={() => setAuthModal(null)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setAuthModal(null)}
-              className="absolute right-3 top-3 text-xl text-gray-500 hover:text-gray-700"
-              aria-label="Close auth modal"
-            >
-              ×
-            </button>
-            <div className="max-h-[80vh] overflow-y-auto">
-              <SignupPage />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={authModal === "login"}
+        onOpenChange={(open) => {
+          if (!open) setAuthModal(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {authModal === "login" && <LoginPage />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

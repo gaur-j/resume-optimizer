@@ -108,20 +108,20 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg p-6 max-w-md w-full"
+        className="bg-card rounded-lg p-6 max-w-md w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             Get more scans
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-foreground hover:text-foreground"
             aria-label="Close"
           >
             ✕
@@ -129,7 +129,7 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-700 text-sm">
             {error}
           </div>
         )}
@@ -140,24 +140,24 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
               key={plan.type}
               onClick={() => handleBuy(plan)}
               disabled={loadingPlan !== null}
-              className="w-full flex justify-between items-center border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors disabled:opacity-50 text-left"
+              className="w-full flex justify-between items-center border-2 border-border rounded-lg p-4 hover:border-primary transition-colors disabled:opacity-50 text-left"
             >
               <div>
-                <div className="font-medium text-gray-900">{plan.label}</div>
+                <div className="font-medium text-foreground">{plan.label}</div>
                 {plan.popular && (
-                  <div className="text-xs text-blue-600 font-medium">
+                  <div className="text-xs text-primary font-medium">
                     Best value
                   </div>
                 )}
               </div>
-              <div className="font-semibold text-gray-900">
+              <div className="font-semibold text-foreground">
                 {loadingPlan === plan.type ? "Loading..." : `₹${plan.price}`}
               </div>
             </button>
           ))}
         </div>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
+        <p className="text-xs text-muted-foreground text-center mt-4">
           Secure payment powered by Razorpay
         </p>
       </div>

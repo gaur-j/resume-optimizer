@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/Theme/theme-provider";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,14 +53,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html
+      lang="en"
+      className={cn("font-sans", geist.variable)}
+      suppressHydrationWarning
+    >
       <head>
         <script
           src="https://checkout.razorpay.com/v1/checkout.js"
           async
         ></script>
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

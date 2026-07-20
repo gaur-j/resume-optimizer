@@ -4,47 +4,50 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LoginPage from "@/app/auth/login/page";
 import SignupPage from "@/app/auth/signup/page";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 
 export default function Home() {
   const [authModal, setAuthModal] = useState<"login" | "signup" | null>(null);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur z-40">
+      <nav className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold text-gray-900">
-            Resume<span className="text-blue-600">AI</span>
+          <div className="text-2xl font-bold">
+            Resume<span className="text-primary">AI</span>
           </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setAuthModal("login")}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900 text-sm font-medium"
+              className="px-4 py-2 text-muted-foreground hover:text-primary/90 text-sm font-medium"
             >
               Log in
             </button>
             <Button
               type="button"
               onClick={() => setAuthModal("signup")}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90 font-medium"
             >
               Get Started Free
             </Button>
+            <ThemeToggle />
           </div>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
-        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-          <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full mb-6">
+          <span className="w-1.5 h-1.5 bg-primary rounded-full" />
           Built for Indian job seekers
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+        <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-6 leading-tight">
           Find out why ATS bots are rejecting your resume
         </h1>
-        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
           Upload your resume and a job description. Get a real ATS score,
           missing keywords, and AI-rewritten bullet points — in under 2 minutes,
           free.
@@ -54,19 +57,19 @@ export default function Home() {
             type="button"
             size="lg"
             onClick={() => setAuthModal("signup")}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
           >
             Check My Resume — Free →
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-muted-foreground mt-4">
           No credit card required · 3 free scans · Results in under a minute
         </p>
       </section>
 
       {/* Trust bar */}
-      <section className="border-y border-gray-100 bg-gray-50 py-6">
-        <div className="max-w-5xl mx-auto px-4 flex flex-wrap justify-center gap-x-10 gap-y-3 text-sm text-gray-500">
+      <section className="border-y border-border/50 bg-secondary py-6">
+        <div className="max-w-5xl mx-auto px-4 flex flex-wrap justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground">
           <span>✓ Works with Naukri, LinkedIn &amp; company career pages</span>
           <span>✓ No data stored beyond your account</span>
           <span>✓ Built by a student, for students</span>
@@ -76,45 +79,45 @@ export default function Home() {
       {/* How it works */}
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
             How it works
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-muted-foreground mb-12">
             Three steps, no downloads, no signup wall to see your score
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
                 1
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Paste your resume
+              <h3 className="font-semibold text-foreground mb-2">
+                Upload your resume
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Drop in your resume text and the job description you&apos;re
                 targeting.
               </p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
                 2
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-foreground mb-2">
                 Get your ATS score
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 See exactly how ATS software reads your resume — keywords,
                 formatting, and content quality, scored separately.
               </p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
                 3
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-foreground mb-2">
                 Fix it in one click
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Copy AI-rewritten bullet points that add the metrics and
                 keywords ATS bots are scanning for.
               </p>
@@ -124,12 +127,12 @@ export default function Home() {
       </section>
 
       {/* Category breakdown — inspired by how leading checkers present scoring */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-secondary py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
             One score isn&apos;t enough — so we don&apos;t give you just one
           </h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
             Your score breaks down into four categories, so you know exactly
             what to fix instead of guessing.
           </p>
@@ -158,13 +161,13 @@ export default function Home() {
             ].map((cat) => (
               <div
                 key={cat.title}
-                className="bg-white rounded-lg border border-gray-200 p-5"
+                className="bg-card rounded-lg border-border p-5 shadow-sm"
               >
                 <div className="text-2xl mb-3">{cat.icon}</div>
-                <h3 className="font-semibold text-gray-900 mb-1">
+                <h3 className="font-semibold text-foreground mb-1">
                   {cat.title}
                 </h3>
-                <p className="text-sm text-gray-600">{cat.desc}</p>
+                <p className="text-sm text-muted-foreground">{cat.desc}</p>
               </div>
             ))}
           </div>
@@ -174,29 +177,29 @@ export default function Home() {
       {/* Before / After */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
             See the difference
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-muted-foreground mb-12">
             Real example of an AI-rewritten bullet point
           </p>
           <div className="space-y-4">
-            <div className="border border-gray-200 rounded-lg p-5">
-              <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+            <div className="border border-border rounded-lg p-5">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                 Before
               </div>
-              <p className="text-gray-500 line-through">
+              <p className="text-muted-foreground line-through">
                 Worked on React projects for the team
               </p>
             </div>
             <div className="flex justify-center">
-              <div className="text-gray-300">↓</div>
+              <div className="text-border">↓</div>
             </div>
-            <div className="border-2 border-green-200 bg-green-50 rounded-lg p-5">
+            <div className="border-2 border-green-500/30 bg-green-500/10 rounded-lg p-5">
               <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-2">
                 After
               </div>
-              <p className="text-gray-900">
+              <p className="text-foreground">
                 Led React frontend development for 3+ customer-facing web
                 applications, improving page load times by 40%
               </p>
@@ -206,19 +209,19 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-secondary py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
             Simple, honest pricing
           </h2>
-          <p className="text-center text-gray-600 mb-12">
+          <p className="text-center text-muted-foreground mb-12">
             No subscriptions. Pay only when you need more scans.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-1">Free</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">₹0</div>
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+            <div className="bg-card border-border shadow-sm rounded-lg p-6">
+              <h3 className="font-semibold text-foreground mb-1">Free</h3>
+              <div className="text-3xl font-bold text-foreground mb-4">₹0</div>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li>✓ 3 resume scans</li>
                 <li>✓ Full ATS score breakdown</li>
                 <li>✓ Keyword gap analysis</li>
@@ -232,13 +235,15 @@ export default function Home() {
                 Start free
               </Button>
             </div>
-            <div className="bg-white border-2 border-blue-500 rounded-lg p-6 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded-full">
+            <div className="bg-card border-2 border-primary shadow-lg rounded-lg p-6 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
                 Most popular
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">5 Scans</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">₹249</div>
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+              <h3 className="font-semibold text-foreground mb-1">5 Scans</h3>
+              <div className="text-3xl font-bold text-foreground mb-4">
+                ₹249
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li>✓ 5 resume scans</li>
                 <li>✓ AI bullet point rewrites</li>
                 <li>✓ Never expires</li>
@@ -246,15 +251,15 @@ export default function Home() {
               <Button
                 type="button"
                 onClick={() => setAuthModal("signup")}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-primary hover:bg-primary/90"
               >
                 Get 5 scans
               </Button>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-1">1 Scan</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">₹99</div>
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+            <div className="bg-card border-border shadow-sm rounded-lg p-6">
+              <h3 className="font-semibold text-foreground mb-1">1 Scan</h3>
+              <div className="text-3xl font-bold text-foreground mb-4">₹99</div>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li>✓ 1 resume scan</li>
                 <li>✓ AI bullet point rewrites</li>
                 <li>✓ Great for a single application</li>
@@ -275,7 +280,7 @@ export default function Home() {
       {/* FAQ */}
       <section className="py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
             Frequently asked questions
           </h2>
           <div className="space-y-6">
@@ -297,9 +302,9 @@ export default function Home() {
                 a: "We combine ATS-specific scoring logic with AI rewriting, so you get a structured score and gap analysis, not just a generic opinion.",
               },
             ].map((item) => (
-              <div key={item.q} className="border-b border-gray-100 pb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">{item.q}</h3>
-                <p className="text-sm text-gray-600">{item.a}</p>
+              <div key={item.q} className="border-b border-border pb-6">
+                <h3 className="font-semibold text-foreground mb-2">{item.q}</h3>
+                <p className="text-sm text-muted-foreground">{item.a}</p>
               </div>
             ))}
           </div>
@@ -307,52 +312,40 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-primary">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-primary-foreground mb-4">
             Get your ATS score now
           </h2>
-          <p className="text-blue-100 mb-8">
+          <p className="text-primary-foreground/80 mb-8">
             3 free scans included. No credit card required.
           </p>
           <Button
             type="button"
             size="lg"
             onClick={() => setAuthModal("signup")}
-            className="bg-white text-blue-600 hover:bg-gray-100"
+            className="bg-background text-primary hover:bg-background/90"
           >
             Start Free Analysis →
           </Button>
         </div>
       </section>
 
-      {authModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
-          onClick={() => setAuthModal(null)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setAuthModal(null)}
-              className="absolute right-3 top-3 text-xl text-gray-500 hover:text-gray-700"
-              aria-label="Close auth modal"
-            >
-              ×
-            </button>
-            <div className="max-h-[80vh] overflow-y-auto">
-              {authModal === "login" ? <LoginPage /> : <SignupPage />}
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={authModal !== null}
+        onOpenChange={(open) => {
+          if (!open) setAuthModal(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {authModal === "login" && <LoginPage />}
+          {authModal === "signup" && <SignupPage />}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 bg-white">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+      <footer className="border-t border-border py-8 bg-card">
+        <div className="max-w-7xl mx-auto px-4 text-center text-muted-foreground text-sm">
           <p>© 2026 Resume AI Optimizer. Made for Indian job seekers.</p>
         </div>
       </footer>
