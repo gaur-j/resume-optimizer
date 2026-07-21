@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,7 +32,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(
+      toast.error(
         error.message === "Invalid login credentials"
           ? "Incorrect email or password."
           : error.message
@@ -39,7 +40,7 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
+    toast.success("Successfully logged in!");
     router.push("/dashboard");
     router.refresh();
   }
@@ -56,7 +57,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <OAuthButtons onError={setError} />
+      <OAuthButtons onError={(err) => toast.error(err)} />
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">

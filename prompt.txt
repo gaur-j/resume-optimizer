@@ -1,0 +1,28 @@
+Option 1 (Best balance of quality & token efficiency)
+
+Improve this project's UI, UX, visual design, and overall polish. Add a complete theme system (light/dark/custom if appropriate). Identify missing features, usability issues, performance improvements, accessibility enhancements, and modern design patterns that best fit this project. Suggest and implement only relevant, high-impact improvements while maintaining consistency with the existing design.
+
+Option 2 (More powerful for AI coding assistants)
+
+Review the entire project as a senior UI/UX designer and full-stack developer. Improve the interface, user experience, visual hierarchy, responsiveness, animations, accessibility, and code quality. Implement a scalable theme system. Identify missing features, design inconsistencies, and optimization opportunities, then prioritize and implement the highest-impact improvements that align with the project's purpose and modern best practices.
+
+Option 3 (Shortest while keeping excellent results)
+
+Analyze the entire project and make it production-ready. Improve UI, UX, visuals, responsiveness, accessibility, and performance. Add a robust theme system. Identify and implement the most valuable missing features and refinements that naturally fit the project while keeping the design clean, modern, and consistent.
+
+Option 4 (Maximum quality)
+
+Act as an expert product designer, UI/UX specialist, and senior software engineer. Audit the entire project and elevate it to production quality. Focus on:
+
+Modern, polished UI and visual consistency
+Better UX and intuitive navigation
+Responsive design for all devices
+Complete theme system (light/dark/system and easy customization)
+Accessibility (WCAG best practices)
+Performance optimization
+Meaningful animations and micro-interactions
+Design system (colors, spacing, typography, components)
+Find and implement missing features that naturally fit the project
+Remove unnecessary complexity and improve maintainability
+
+Prioritize changes by impact, explain why each improvement matters, and avoid adding features that don't align with the project's goals.

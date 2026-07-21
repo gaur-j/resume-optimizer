@@ -39,32 +39,76 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-          <span className="w-1.5 h-1.5 bg-primary rounded-full" />
-          Built for Indian job seekers
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-mono uppercase tracking-wider px-3 py-1.5 rounded-full mb-6">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full" />
+              Built for Indian job seekers
+            </div>
+            <h1 className="font-mono text-4xl sm:text-5xl font-semibold text-foreground mb-6 leading-[1.1] tracking-tight">
+              Find out why ATS bots are rejecting your resume
+            </h1>
+            <p className="text-lg text-muted-foreground mb-8 max-w-xl">
+              Upload your resume and a job description. Get a real ATS score,
+              missing keywords, and AI-rewritten bullet points — in under 2
+              minutes, free.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                type="button"
+                size="lg"
+                onClick={() => setAuthModal("signup")}
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+              >
+                Check My Resume — Free →
+              </Button>
+            </div>
+            <p className="text-xs font-mono text-muted-foreground mt-4">
+              No credit card required · 3 free scans · results in under a minute
+            </p>
+          </div>
+
+          {/* Signature: a resume snippet under audit, with a real
+              correction and a stamped score — this is what the
+              product actually does, shown rather than illustrated. */}
+          <div className="relative motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700">
+            <div className="rounded-xl border border-border bg-card shadow-xl p-6 -rotate-1">
+              <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-3">
+                Experience — Software Engineering Intern
+              </div>
+              <p className="text-muted-foreground/70 line-through decoration-correction decoration-2 mb-4 text-sm leading-relaxed">
+                Worked on React projects for the team
+              </p>
+              <div className="border-l-2 border-approved bg-approved/10 pl-3 py-2 rounded-r-md">
+                <p className="text-foreground text-sm leading-relaxed">
+                  Led React frontend development for 3+ customer-facing apps,
+                  cutting page load time by 40%
+                </p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                  +quantified impact
+                </span>
+                <span className="text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                  +action verb
+                </span>
+              </div>
+            </div>
+
+            {/* Score stamp */}
+            <div className="absolute -top-7 -right-5 rotate-[8deg] motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-700 motion-safe:delay-300 motion-safe:fill-mode-both">
+              <div className="w-24 h-24 rounded-full border-[3px] border-approved bg-background shadow-lg flex flex-col items-center justify-center">
+                <span className="font-mono text-2xl font-bold text-approved leading-none">
+                  78
+                </span>
+                <span className="font-mono text-[9px] tracking-[0.15em] text-approved mt-1">
+                  ATS SCORE
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-6 leading-tight">
-          Find out why ATS bots are rejecting your resume
-        </h1>
-        <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Upload your resume and a job description. Get a real ATS score,
-          missing keywords, and AI-rewritten bullet points — in under 2 minutes,
-          free.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-3">
-          <Button
-            type="button"
-            size="lg"
-            onClick={() => setAuthModal("signup")}
-            className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
-          >
-            Check My Resume — Free →
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-4">
-          No credit card required · 3 free scans · Results in under a minute
-        </p>
       </section>
 
       {/* Trust bar */}
@@ -79,7 +123,7 @@ export default function Home() {
       {/* How it works */}
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
+          <h2 className="font-mono text-3xl font-semibold tracking-tight text-center text-foreground mb-2">
             How it works
           </h2>
           <p className="text-center text-muted-foreground mb-12">
@@ -87,7 +131,7 @@ export default function Home() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-mono font-semibold mx-auto mb-4">
                 1
               </div>
               <h3 className="font-semibold text-foreground mb-2">
@@ -99,7 +143,7 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-mono font-semibold mx-auto mb-4">
                 2
               </div>
               <h3 className="font-semibold text-foreground mb-2">
@@ -111,7 +155,7 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-4">
+              <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-mono font-semibold mx-auto mb-4">
                 3
               </div>
               <h3 className="font-semibold text-foreground mb-2">
@@ -129,7 +173,7 @@ export default function Home() {
       {/* Category breakdown — inspired by how leading checkers present scoring */}
       <section className="bg-secondary py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
+          <h2 className="font-mono text-3xl font-semibold tracking-tight text-center text-foreground mb-2">
             One score isn&apos;t enough — so we don&apos;t give you just one
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
@@ -177,7 +221,7 @@ export default function Home() {
       {/* Before / After */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
+          <h2 className="font-mono text-3xl font-semibold text-center text-foreground mb-2 tracking-tight">
             See the difference
           </h2>
           <p className="text-center text-muted-foreground mb-12">
@@ -185,18 +229,18 @@ export default function Home() {
           </p>
           <div className="space-y-4">
             <div className="border border-border rounded-lg p-5">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              <div className="text-xs font-mono font-medium text-muted-foreground uppercase tracking-widest mb-2">
                 Before
               </div>
-              <p className="text-muted-foreground line-through">
+              <p className="text-muted-foreground/70 line-through decoration-correction decoration-2">
                 Worked on React projects for the team
               </p>
             </div>
             <div className="flex justify-center">
               <div className="text-border">↓</div>
             </div>
-            <div className="border-2 border-green-500/30 bg-green-500/10 rounded-lg p-5">
-              <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-2">
+            <div className="border-l-2 border-approved bg-approved/10 rounded-r-lg p-5">
+              <div className="text-xs font-mono font-medium text-approved uppercase tracking-widest mb-2">
                 After
               </div>
               <p className="text-foreground">
@@ -211,7 +255,7 @@ export default function Home() {
       {/* Pricing */}
       <section className="bg-secondary py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-2">
+          <h2 className="font-mono text-3xl font-semibold tracking-tight text-center text-foreground mb-2">
             Simple, honest pricing
           </h2>
           <p className="text-center text-muted-foreground mb-12">
@@ -220,7 +264,9 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-card border-border shadow-sm rounded-lg p-6">
               <h3 className="font-semibold text-foreground mb-1">Free</h3>
-              <div className="text-3xl font-bold text-foreground mb-4">₹0</div>
+              <div className="font-mono text-3xl font-semibold text-foreground mb-4">
+                ₹0
+              </div>
               <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li>✓ 3 resume scans</li>
                 <li>✓ Full ATS score breakdown</li>
@@ -240,7 +286,7 @@ export default function Home() {
                 Most popular
               </div>
               <h3 className="font-semibold text-foreground mb-1">5 Scans</h3>
-              <div className="text-3xl font-bold text-foreground mb-4">
+              <div className="font-mono text-3xl font-semibold text-foreground mb-4">
                 ₹249
               </div>
               <ul className="text-sm text-muted-foreground space-y-2 mb-6">
@@ -258,7 +304,9 @@ export default function Home() {
             </div>
             <div className="bg-card border-border shadow-sm rounded-lg p-6">
               <h3 className="font-semibold text-foreground mb-1">1 Scan</h3>
-              <div className="text-3xl font-bold text-foreground mb-4">₹99</div>
+              <div className="font-mono text-3xl font-semibold text-foreground mb-4">
+                ₹99
+              </div>
               <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li>✓ 1 resume scan</li>
                 <li>✓ AI bullet point rewrites</li>
@@ -280,7 +328,7 @@ export default function Home() {
       {/* FAQ */}
       <section className="py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
+          <h2 className="font-mono text-3xl font-semibold tracking-tight text-center text-foreground mb-12">
             Frequently asked questions
           </h2>
           <div className="space-y-6">
@@ -314,7 +362,7 @@ export default function Home() {
       {/* Final CTA */}
       <section className="py-20 bg-primary">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-primary-foreground mb-4">
+          <h2 className="font-mono text-3xl font-semibold tracking-tight text-primary-foreground mb-4">
             Get your ATS score now
           </h2>
           <p className="text-primary-foreground/80 mb-8">

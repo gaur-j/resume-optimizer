@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import LoginPage from "@/app/auth/login/page";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -46,7 +47,7 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      toast.error(error.message);
       setLoading(false);
       return;
     }
@@ -54,6 +55,7 @@ export default function SignupPage() {
     // If "Confirm email" is disabled in Supabase, a session comes back
     // immediately and the user is already signed in — send them straight in.
     if (data.session) {
+      toast.success("Successfully sign up!");
       router.push("/dashboard");
       router.refresh();
       return;
@@ -84,7 +86,7 @@ export default function SignupPage() {
         </div>
       )}
 
-      <OAuthButtons onError={setError} />
+      <OAuthButtons onError={(err) => toast.error(err)} />
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">

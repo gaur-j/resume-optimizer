@@ -89,7 +89,7 @@ export function OAuthButtons({ onError }: OAuthButtonsProps) {
           type="button"
           onClick={() => handleOAuth(provider.id)}
           disabled={loadingProvider !== null}
-          className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 border border-border rounded-lg py-2.5 px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {provider.icon}
           {loadingProvider === provider.id ? "Redirecting..." : provider.label}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { CreditsCard } from "@/components/dashboard/CreditsCard";
 import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
+import { ResultsPanelSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
 import type { ATSAnalysis, BulletRewrite } from "@/types/analysis";
@@ -28,9 +29,11 @@ export default function DashboardPage() {
   const [showBuyModal, setShowBuyModal] = useState(false);
 
   const supabase = createClient();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const fetchCredits = useCallback(async () => {
     setCreditsLoading(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -75,10 +78,19 @@ export default function DashboardPage() {
     setError("");
     setResults(null);
 
+    requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           resume_text: resumeText,
           jd_text: jobDescription,
@@ -91,12 +103,13 @@ export default function DashboardPage() {
         if (response.status === 402) {
           setShowBuyModal(true);
         }
+
         setError(data.error || "Analysis failed");
         return;
       }
 
       setResults(data.data);
-      fetchCredits(); // reflect the credit that was just spent
+      fetchCredits();
     } catch (err) {
       setError("An error occurred. Please try again.");
       console.error(err);
@@ -106,110 +119,126 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Input Section */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h1 className="mb-6 text-3xl font-bold tracking-tight text-foreground">
+    <div className="min-h-screen bg-card">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            ATS Resume Analysis
+          </div>
+
+          <h1 className="mt-5 font-mono text-4xl font-semibold tracking-tight text-foreground">
             Analyze Your Resume
           </h1>
 
-          <form onSubmit={handleAnalyze} className="space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                Your Resume
-              </label>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            Upload your resume and match it with a job description to find ATS
+            score, missing keywords, and AI-powered improvements.
+          </p>
+        </div>
 
-              <ResumeUploader
-                onExtracted={(text) => setResumeText(text)}
-                disabled={loading}
-              />
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+          {/* Main */}
+          <div className="space-y-8 lg:col-span-2">
+            <div className="rounded-2xl border border-border bg-card p-8 shadow-xl">
+              <form onSubmit={handleAnalyze} className="space-y-8">
+                <div>
+                  <label className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    Your Resume
+                  </label>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
+                  <ResumeUploader
+                    onExtracted={(text) => setResumeText(text)}
+                    disabled={loading}
+                  />
                 </div>
 
-                <div className="relative flex justify-center text-xs"></div>
-              </div>
-              {/* 
-              <textarea
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                placeholder="Paste your resume text here, or upload a PDF above..."
-                className="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              */}
+                <div className="border-t border-border pt-8">
+                  <label className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    Job Description
+                  </label>
+
+                  <Textarea
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    placeholder="Paste the job description here..."
+                    className="min-h-[220px] rounded-xl border-border bg-background px-4 py-3 focus-visible:ring-primary"
+                  />
+                </div>
+
+                {error && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading || creditsLoading}
+                  className="h-12 w-full bg-primary font-medium hover:bg-primary/90"
+                >
+                  {loading ? "Analyzing..." : "Get ATS Score →"}
+                </Button>
+              </form>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                Job Description
-              </label>
-              <Textarea
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Paste the job description here..."
-                className="min-h-[180px]"
-              />
+            <div ref={resultsRef}>
+              {loading && (
+                <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
+                  <h2 className="mb-6 font-mono text-2xl font-semibold text-foreground">
+                    Analysis Results
+                  </h2>
+
+                  <ResultsPanelSkeleton />
+                </div>
+              )}
+
+              {results && !loading && (
+                <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
+                  <ResultsPanel
+                    atsAnalysis={results.ats_analysis}
+                    bulletRewrites={results.bullet_rewrites}
+                  />
+                </div>
+              )}
             </div>
+          </div>
 
-            {error && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive">
-                {error}
-              </div>
-            )}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <CreditsCard
+              credits={credits}
+              loading={creditsLoading}
+              onBuyMore={() => setShowBuyModal(true)}
+            />
 
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90"
-              disabled={loading || creditsLoading}
-            >
-              {loading ? "Analyzing..." : "Get ATS Score"}
-            </Button>
-          </form>
+            <div className="rounded-2xl border border-border bg-secondary p-6">
+              <h3 className="mb-4 font-mono text-lg font-semibold text-foreground">
+                💡 Quick Tips
+              </h3>
+
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li>✓ Match keywords from the job description.</li>
+                <li>✓ Add measurable achievements.</li>
+                <li>✓ Use action verbs like Built, Led, Designed.</li>
+                <li>✓ Keep formatting ATS-friendly.</li>
+                <li>✓ Tailor every resume to the job.</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        {/* Results now render below the form once available */}
-        {results && (
-          <div className="rounded-xl border bg-card p-6 shadow-sm">
-            <ResultsPanel
-              atsAnalysis={results.ats_analysis}
-              bulletRewrites={results.bullet_rewrites}
-            />
-          </div>
+        {showBuyModal && (
+          <BuyCreditsModal
+            onClose={() => setShowBuyModal(false)}
+            onSuccess={() => {
+              setShowBuyModal(false);
+              fetchCredits();
+            }}
+          />
         )}
       </div>
-
-      {/* Sidebar */}
-      <div className="space-y-6">
-        <CreditsCard
-          credits={credits}
-          loading={creditsLoading}
-          onBuyMore={() => setShowBuyModal(true)}
-        />
-
-        <div className="rounded-xl border bg-secondary p-6">
-          <h3 className="font-semibold text-secondary-foreground mb-2">
-            💡 Tips
-          </h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Use keywords from the job description</li>
-            <li>• Include quantified achievements</li>
-            <li>• Keep formatting simple and clean</li>
-          </ul>
-        </div>
-      </div>
-
-      {showBuyModal && (
-        <BuyCreditsModal
-          onClose={() => setShowBuyModal(false)}
-          onSuccess={() => {
-            setShowBuyModal(false);
-            fetchCredits();
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -40,70 +41,89 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
     setLoadingPlan(plan.type);
     setError("");
 
-    try {
-      // Step 1: create a Razorpay order on our server
-      const orderRes = await fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount_inr: plan.price,
-          scan_credits: plan.credits,
-          plan_type: plan.type,
-        }),
-      });
-      const orderData = await orderRes.json();
-
-      if (!orderRes.ok) {
-        throw new Error(orderData.error || "Failed to create order");
-      }
-
-      // Step 2: open Razorpay's hosted checkout
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: plan.price * 100,
-        currency: "INR",
-        name: "Resume AI Optimizer",
-        description: plan.label,
-        order_id: orderData.data.order_id,
-        handler: async function (response: RazorpaySuccessResponse) {
-          // Step 3: verify the payment signature on our server
-          try {
-            const verifyRes = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-            const verifyData = await verifyRes.json();
-
-            if (verifyRes.ok) {
-              onSuccess();
-            } else {
-              setError(verifyData.error || "Payment verification failed");
-            }
-          } catch {
-            setError(
-              "Payment succeeded but verification failed. Contact support."
-            );
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setLoadingPlan(null);
+    const paymentPromise = new Promise<void>(async (resolve, reject) => {
+      try {
+        // Create order
+        const orderRes = await fetch("/api/create-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        },
-        theme: { color: "#2563eb" },
-      };
+          body: JSON.stringify({
+            amount_inr: plan.price,
+            scan_credits: plan.credits,
+            plan_type: plan.type,
+          }),
+        });
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setLoadingPlan(null);
-    }
+        const orderData = await orderRes.json();
+
+        if (!orderRes.ok) {
+          return reject(new Error(orderData.error || "Failed to create order"));
+        }
+
+        const rzp = new window.Razorpay({
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: plan.price * 100,
+          currency: "INR",
+          name: "Resume AI Optimizer",
+          description: plan.label,
+          order_id: orderData.data.order_id,
+
+          handler: async (response: RazorpaySuccessResponse) => {
+            try {
+              const verifyRes = await fetch("/api/verify-payment", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (!verifyRes.ok) {
+                return reject(
+                  new Error(verifyData.error || "Payment verification failed")
+                );
+              }
+
+              onSuccess();
+              resolve();
+            } catch {
+              reject(new Error("Payment succeeded but verification failed."));
+            }
+          },
+
+          modal: {
+            ondismiss() {
+              reject(new Error("Payment cancelled"));
+              setLoadingPlan(null);
+            },
+          },
+
+          theme: {
+            color: "#2563eb",
+          },
+        });
+
+        rzp.open();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    await toast.promise(paymentPromise, {
+      loading: "Processing payment...",
+      success: "Payment successful! Credits added.",
+      error: (err) => err.message,
+    });
+
+    setLoadingPlan(null);
   }
 
   return (

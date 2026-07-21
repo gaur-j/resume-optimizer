@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { CheckCircle2, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 interface ResumeUploaderProps {
   onExtracted: (text: string) => void;
@@ -32,9 +33,11 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
   const handleFile = useCallback(
     async (file: File) => {
       const validationError = validateFile(file);
+
       if (validationError) {
         setError(validationError);
         setStatus("error");
+        toast.error(validationError);
         return;
       }
 
@@ -43,29 +46,45 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
       setError("");
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
+        await toast.promise(
+          (async () => {
+            const formData = new FormData();
+            formData.append("file", file);
 
-        const response = await fetch("/api/extract-pdf", {
-          method: "POST",
-          body: formData,
-        });
+            const response = await fetch("/api/extract-pdf", {
+              method: "POST",
+              body: formData,
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (!response.ok) {
-          setError(data.error || "Failed to read that PDF.");
-          setStatus("error");
-          return;
-        }
+            if (!response.ok) {
+              throw new Error(data.error || "Failed to read that PDF.");
+            }
 
-        onExtracted(data.data.text);
-        setStatus("success");
+            onExtracted(data.data.text);
+            setStatus("success");
+
+            return data;
+          })(),
+          {
+            loading: `Reading ${file.name}...`,
+            success: "Resume uploaded successfully.",
+            error: (err) =>
+              err instanceof Error
+                ? err.message
+                : "Something went wrong. Please try again.",
+          }
+        );
       } catch (err) {
         console.error(err);
-        setError(
-          "Something went wrong. Please try again or paste text manually."
-        );
+
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.";
+
+        setError(message);
         setStatus("error");
       }
     },
@@ -130,7 +149,7 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
             <CheckCircle2 className="h-6 w-6 text-green-600" />
             <p className="text-sm text-foreground font-medium">{fileName}</p>
             <p className="text-xs text-muted-foreground">
-              Text extracted — review it below and edit if needed
+              Resuem uploaded — review it below and edit if needed
             </p>
           </div>
         )}

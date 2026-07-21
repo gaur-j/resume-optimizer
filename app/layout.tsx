@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, Geist } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/Theme/theme-provider";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+});
 
-const inter = Inter({ subsets: ["latin"] });
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Resume AI Optimizer | ATS Score Checker",
@@ -55,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("font-sans", geist.variable)}
+      className={cn("font-sans", plexMono.variable, plexSans.variable)}
       suppressHydrationWarning
     >
       <head>
@@ -64,7 +73,7 @@ export default function RootLayout({
           async
         ></script>
       </head>
-      <body className={inter.className}>
+      <body className={plexSans.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -72,6 +81,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          {/* Add the Toaster component right above the closing body tag */}
+          <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
     </html>
