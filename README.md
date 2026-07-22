@@ -82,7 +82,7 @@ Add screenshots before launch.
 * React
 * Tailwind CSS
 * Node.js
-* AI service: add your provider here
+* AI service: Grok, Gemini
 
 ---
 
