@@ -206,14 +206,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-1">
             <CreditsCard
               credits={credits}
               loading={creditsLoading}
               onBuyMore={() => setShowBuyModal(true)}
             />
 
-            <div className="rounded-2xl border border-border bg-secondary p-6">
+            <div className="rounded-2xl border border-border bg-secondary p-6 shadow-xl">
               <h3 className="mb-4 font-mono text-lg font-semibold text-foreground">
                 💡 Quick Tips
               </h3>
