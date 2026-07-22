@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         {
           amount: amount_inr * 100,
           currency: "INR",
-          receipt: `order_${user.id}_${Date.now()}`,
+          receipt: `order_${user.id.slice(0, 8)}_${Date.now().toString(36)}`,
           payment_capture: true,
         },
         (error: any, order: any) => {

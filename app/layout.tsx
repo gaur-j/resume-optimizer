@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/Theme/theme-provider";
 
 const plexMono = IBM_Plex_Mono({
@@ -68,10 +69,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
+        <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
-          async
-        ></script>
+          strategy="afterInteractive"
+        />
       </head>
       <body className={plexSans.className}>
         <ThemeProvider
