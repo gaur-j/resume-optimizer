@@ -41,12 +41,11 @@ export default async function DashboardLayout({
                 {user.email?.[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden md:block text-sm text-muted-foreground truncate max-w-[200px]">
-              <Avatar>
-                <AvatarFallback className="text-primary bg-card text-xl font-sans shadow-sm tracking-tighter">
-                  {user.email?.[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <span
+              className="hidden md:block text-sm text-muted-foreground truncate max-w-[200px]"
+              title={user.email ?? undefined}
+            >
+              {user.email}
             </span>
 
             <ThemeToggle />

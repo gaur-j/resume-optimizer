@@ -18,43 +18,76 @@ const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Resume AI Optimizer | ATS Score Checker",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
+    template:
+      "%s | Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
+  },
   description:
-    "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes.",
+    "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes. | Boost your interview chances with AI. Get a free ATS resume score, keyword analysis, resume rewrites, and LinkedIn optimization in under 2 minutes.",
   keywords: [
     "ATS resume checker",
+    "AI resume builder",
     "resume optimizer",
-    "LinkedIn optimizer",
+    "resume score checker",
+    "ATS score",
+    "resume keyword checker",
+    "resume AI",
+    "LinkedIn profile optimizer",
+    "CV checker",
+    "resume improvement",
     "job application",
-    "India",
+    "resume scanner",
+    "India jobs",
+    "career tools",
   ],
   authors: [{ name: "Resume AI Optimizer" }],
+  creator: "Resume AI Optimizer",
+  publisher: "Resume AI Optimizer",
+  alternates: {
+    canonical: APP_URL,
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: process.env.NEXT_PUBLIC_APP_URL,
+    url: APP_URL,
     siteName: "Resume AI Optimizer",
-    title: "Resume AI Optimizer | Check Your ATS Score Free",
+    title:
+      "Resume AI Optimizer | Check Your ATS Score Free | Free ATS Resume Score Checker",
     description:
-      "AI-powered resume optimization. Get instant ATS score, find missing keywords, and rewrite weak bullets.",
+      "AI-powered resume optimization. Get instant ATS score, find missing keywords, and rewrite weak bullets. | Analyze your resume with AI, discover missing ATS keywords, improve weak bullet points, and increase your chances of landing interviews.",
     images: [
       {
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/og-image.png`,
+        url: "/og-image.png",
         width: 1200,
         height: 630,
+        alt: "Resume AI Optimizer ATS Score Checker",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resume AI Optimizer",
-    description: "Check your ATS score and optimize your resume in 2 minutes",
+    title: "Resume AI Optimizer | Free ATS Resume Score Checker",
+    description:
+      "Get an ATS score, keyword analysis, AI resume rewrites, and LinkedIn optimization for free.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
+  category: "Career",
 };
 
 export default function RootLayout({
@@ -73,6 +106,22 @@ export default function RootLayout({
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="afterInteractive"
         />
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body className={plexSans.className}>
         <ThemeProvider

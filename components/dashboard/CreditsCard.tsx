@@ -10,8 +10,8 @@ interface CreditsCardProps {
 
 export function CreditsCard({ credits, loading, onBuyMore }: CreditsCardProps) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">
+    <div className="bg-secondary rounded-lg border border-border p-6 shadow-xl">
+      <h2 className="text-lg font-semibold font-mono text-foreground mb-4">
         Your Credits
       </h2>
       <div className="text-center">
@@ -21,19 +21,23 @@ export function CreditsCard({ credits, loading, onBuyMore }: CreditsCardProps) {
           </div>
         ) : (
           <div
-            className={`text-4xl font-bold mb-2 ${
-              credits === 0 ? "text-destructive" : "text-primary"
+            className={`text-4xl font-bold mb-2 font-sans ${
+              credits === 0 ? "text-correction" : "text-approved"
             }`}
           >
             {credits}
           </div>
         )}
-        <p className="text-sm text-muted-foreground mb-6">
+        <p
+          className={`text-sm mb-6 font-sans ${
+            credits === 0 ? "text-correction" : "text-muted-foreground"
+          }`}
+        >
           {credits === 0 ? "No scans remaining" : "Scans available"}
         </p>
         <Button
           onClick={onBuyMore}
-          className="w-full bg-primary hover:bg-primary/90"
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-sans shadow-sm"
         >
           Get More Scans
         </Button>

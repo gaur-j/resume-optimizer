@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 declare global {
@@ -36,6 +36,21 @@ interface BuyCreditsModalProps {
 export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Move keyboard focus into the modal on open, and let Escape close it —
+  // neither worked before since this modal doesn't use the shared Dialog
+  // primitive (which handles both for free).
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   async function handleBuy(plan: (typeof PLANS)[number]) {
     setLoadingPlan(plan.type);
@@ -128,20 +143,27 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 "
       onClick={onClose}
     >
       <div
-        className="bg-card rounded-lg p-6 max-w-md w-full"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buy-credits-title"
+        className="bg-card rounded-lg p-6 max-w-md w-full shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3
+            id="buy-credits-title"
+            className="text-lg font-semibold text-foreground font-mono"
+          >
             Get more scans
           </h3>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             aria-label="Close"
           >
             ✕
@@ -149,7 +171,10 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-700 text-sm">
+          <div
+            role="alert"
+            className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm"
+          >
             {error}
           </div>
         )}
@@ -160,12 +185,12 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
               key={plan.type}
               onClick={() => handleBuy(plan)}
               disabled={loadingPlan !== null}
-              className="w-full flex justify-between items-center border-2 border-border rounded-lg p-4 hover:border-primary transition-colors disabled:opacity-50 text-left"
+              className="w-full flex justify-between items-center border-2 border-border rounded-lg p-4 hover:border-primary transition-colors disabled:opacity-50 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-sans"
             >
               <div>
                 <div className="font-medium text-foreground">{plan.label}</div>
                 {plan.popular && (
-                  <div className="text-xs text-primary font-medium">
+                  <div className="text-xs font-sans text-primary font-medium">
                     Best value
                   </div>
                 )}
@@ -177,7 +202,7 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
           ))}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center mt-4">
+        <p className="text-xs text-muted-foreground font-sans text-center mt-4">
           Secure payment powered by Razorpay
         </p>
       </div>

@@ -9,15 +9,15 @@ interface ResultsPanelProps {
 }
 
 function scoreColor(score: number) {
-  if (score < 40) return "text-red-600";
-  if (score < 70) return "text-amber-600";
-  return "text-green-600";
+  if (score < 40) return "text-correction";
+  if (score < 70) return "text-warning";
+  return "text-approved";
 }
 
 function scoreRing(score: number) {
-  if (score < 40) return "#dc2626";
-  if (score < 70) return "#d97706";
-  return "#16a34a";
+  if (score < 40) return "var(--correction)";
+  if (score < 70) return "var(--warning)";
+  return "var(--approved)";
 }
 
 export function ResultsPanel({
@@ -40,18 +40,22 @@ export function ResultsPanel({
     <div className="space-y-6">
       {/* Overall Score */}
       <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">
+        <h2 className="text-xl tracking-normal font-semibold text-foreground mb-4 font-mono">
           ATS Score
         </h2>
         <div className="flex justify-center mb-4">
           <div className="relative w-32 h-32">
-            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
+            <svg
+              className="w-32 h-32 -rotate-90"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
               <circle
                 cx="50"
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#e5e7eb"
+                stroke="var(--border)"
                 strokeWidth="8"
               />
               <circle
@@ -95,19 +99,19 @@ export function ResultsPanel({
 
       {/* Keyword Gap */}
       <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">
+        <h2 className="text-lg font-semibold text-foreground mb-4 font-mono">
           Keyword Match
         </h2>
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <div className="text-sm font-medium text-green-700 mb-2">
+            <div className="text-sm font-medium text-approved mb-2 font-sans">
               ✓ Matched ({atsAnalysis.matched_keywords.length})
             </div>
             <div className="flex flex-wrap gap-2">
               {atsAnalysis.matched_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-green-500/10 text-green-700 px-2 py-1 rounded-full border border-green-500/30"
+                  className="text-xs bg-approved/10 text-approved border border-approved/30 px-2 py-1 rounded-full"
                 >
                   {kw}
                 </span>
@@ -115,14 +119,14 @@ export function ResultsPanel({
             </div>
           </div>
           <div>
-            <div className="text-sm font-medium text-destructive mb-2">
+            <div className="text-sm font-medium font-sans text-destructive mb-2">
               ✗ Missing ({atsAnalysis.missing_keywords.length})
             </div>
             <div className="flex flex-wrap gap-2">
               {atsAnalysis.missing_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-red-50 text-destructive px-2 py-1 rounded-full border border-red-200"
+                  className="text-xs bg-correction/10 text-correction border border-correction/30 px-2 py-1 rounded-full"
                 >
                   {kw}
                 </span>
@@ -188,12 +192,17 @@ export function ResultsPanel({
                 {bullet.rewritten_options.map((option, j) => (
                   <div
                     key={j}
-                    className="flex items-start justify-between gap-2 bg-green-500/10 rounded-lg p-3 mb-2 last:mb-0"
+                    className="flex items-start justify-between gap-2 bg-approved/10 rounded-lg p-3 mb-2 last:mb-0"
                   >
                     <p className="text-sm text-foreground">{option}</p>
                     <button
                       onClick={() => copyBullet(option, i * 10 + j)}
-                      className="text-xs text-primary hover:text-primary-foreground whitespace-nowrap flex-shrink-0"
+                      aria-label={
+                        copiedIndex === i * 10 + j
+                          ? "Copied to clipboard"
+                          : "Copy this rewrite to clipboard"
+                      }
+                      className="text-xs text-primary hover:text-primary-foreground whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1"
                     >
                       {copiedIndex === i * 10 + j ? "Copied!" : "Copy"}
                     </button>

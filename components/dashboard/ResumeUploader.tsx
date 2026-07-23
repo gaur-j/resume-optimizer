@@ -109,6 +109,10 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
   return (
     <div>
       <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        aria-label="Upload resume PDF, up to 5 megabytes"
         onDragOver={(e) => {
           e.preventDefault();
           if (!disabled) setIsDragging(true);
@@ -116,8 +120,16 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => !disabled && inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         className={`
           rounded-xl border-2 border-dashed p-8 text-center transition-all
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
           ${
             isDragging
               ? "border-primary bg-primary/10 shadow-sm"
@@ -133,40 +145,55 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
           onChange={handleFileInputChange}
           disabled={disabled}
           className="hidden"
+          tabIndex={-1}
+          aria-hidden="true"
         />
 
-        {status === "uploading" && (
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
-            <p className="text-sm text-muted-foreground">
-              Reading {fileName}...
-            </p>
-          </div>
-        )}
+        <div aria-live="polite">
+          {status === "uploading" && (
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
+              <p className="text-sm text-muted-foreground">
+                Reading {fileName}...
+              </p>
+            </div>
+          )}
 
-        {status === "success" && (
-          <div className="flex flex-col items-center gap-1">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
-            <p className="text-sm text-foreground font-medium">{fileName}</p>
-            <p className="text-xs text-muted-foreground">
-              Resuem uploaded — review it below and edit if needed
-            </p>
-          </div>
-        )}
+          {status === "success" && (
+            <div className="flex flex-col items-center gap-1">
+              <CheckCircle2
+                className="h-6 w-6 text-green-600"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-foreground font-medium">{fileName}</p>
+              <p className="text-xs text-muted-foreground">
+                Resume uploaded — review it below and edit if needed
+              </p>
+            </div>
+          )}
 
-        {(status === "idle" || status === "error") && (
-          <div className="flex flex-col items-center gap-1">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-            <p className="text-sm text-foreground font-medium">
-              Drop your resume PDF here, or click to browse
-            </p>
-            <p className="text-xs text-muted-foreground">PDF only, up to 5MB</p>
-          </div>
-        )}
+          {(status === "idle" || status === "error") && (
+            <div className="flex flex-col items-center gap-1">
+              <FileText
+                className="h-6 w-6 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-foreground font-medium">
+                Drop your resume PDF here, or click to browse
+              </p>
+              <p className="text-xs text-muted-foreground">
+                PDF only, up to 5MB
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {status === "error" && error && (
-        <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+        <div
+          role="alert"
+          className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+        >
           {error}
         </div>
       )}

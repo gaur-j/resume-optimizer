@@ -155,15 +155,19 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="border-t border-border pt-8">
-                  <label className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  <label
+                    htmlFor="job-description"
+                    className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground"
+                  >
                     Job Description
                   </label>
 
                   <Textarea
+                    id="job-description"
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the job description here..."
-                    className="min-h-[220px] rounded-xl border-border bg-background px-4 py-3 focus-visible:ring-primary"
+                    className="min-h-[220px] rounded-xl border-border font-sans bg-background px-4 py-3 focus-visible:ring-primary"
                   />
                 </div>
 
@@ -176,7 +180,7 @@ export default function DashboardPage() {
                 <Button
                   type="submit"
                   disabled={loading || creditsLoading}
-                  className="h-12 w-full bg-primary font-medium hover:bg-primary/90"
+                  className="h-12 w-full bg-primary hover:bg-primary/90 font-sans shadow-sm"
                 >
                   {loading ? "Analyzing..." : "Get ATS Score →"}
                 </Button>
