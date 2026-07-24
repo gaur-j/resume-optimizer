@@ -20,6 +20,9 @@
 # production
 /build
 prompt.txt
+srs.txt
+
+
 # misc
 .DS_Store
 *.pem

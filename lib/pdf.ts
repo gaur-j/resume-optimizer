@@ -1,3 +1,4 @@
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 // pdf-parse v2 inserts a footer like "-- 1 of 3 --" after every page's
@@ -7,7 +8,7 @@ import { PDFParse } from "pdf-parse";
 const PAGE_MARKER = /\n*--\s*\d+\s*of\s*\d+\s*--\n*/g;
 
 export async function extractTextFromPDF(buffer: Buffer) {
-  const parser = new PDFParse({ data: buffer });
+  const parser = new PDFParse({ data: new Uint8Array(buffer), CanvasFactory });
 
   try {
     const result = await parser.getText();
