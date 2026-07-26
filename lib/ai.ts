@@ -1,5 +1,22 @@
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type {
+  TailoredResume,
+  TailoredResumeChangesSummary,
+  TailoredResumeContext,
+  TailoredResumeLine,
+  TailoredResumeLineType,
+  TailoredResumeSection,
+} from "@/types/analysis";
+
+export type {
+  TailoredResume,
+  TailoredResumeChangesSummary,
+  TailoredResumeContext,
+  TailoredResumeLine,
+  TailoredResumeLineType,
+  TailoredResumeSection,
+} from "@/types/analysis";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -36,7 +53,8 @@ export interface SummaryResult {
  */
 async function callAI(
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens = 2048,
 ): Promise<string> {
   // --- Try Groq first ---
   try {
@@ -47,7 +65,7 @@ async function callAI(
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3,
-      max_tokens: 2048,
+      max_tokens: maxTokens,
       response_format: { type: "json_object" }, // forces valid JSON — Groq supports this on Llama 3.3
     });
 
@@ -84,7 +102,7 @@ async function callAI(
     } catch (fallbackErr) {
       console.error("Gemini fallback also failed:", fallbackErr);
       throw new Error(
-        "Both AI providers are unavailable right now. Please try again in a minute."
+        "Both AI providers are unavailable right now. Please try again in a minute.",
       );
     }
   }
@@ -103,7 +121,7 @@ function cleanJSON(text: string): string {
  */
 export async function analyzeATS(
   resumeText: string,
-  jobDescription: string
+  jobDescription: string,
 ): Promise<ATSAnalysisResult> {
   const systemPrompt = `You are an ATS (Applicant Tracking System) expert and resume analyst. Analyze the provided resume against the job description.
 
@@ -140,7 +158,7 @@ Respond with ONLY valid JSON, no markdown, no code blocks, no explanation:
  */
 export async function rewriteBullets(
   bullets: string[],
-  jobDescription: string
+  jobDescription: string,
 ): Promise<BulletRewriteResult[]> {
   const bulletsText = bullets.map((b, i) => `${i + 1}. ${b}`).join("\n");
 
@@ -159,7 +177,7 @@ Respond with ONLY valid JSON, no markdown:
 
   const userPrompt = `CURRENT BULLETS:\n${bulletsText}\n\nTARGET ROLE DESCRIPTION:\n${jobDescription.slice(
     0,
-    500
+    500,
   )}`;
 
   const responseText = await callAI(systemPrompt, userPrompt);
@@ -177,7 +195,7 @@ Respond with ONLY valid JSON, no markdown:
  */
 export async function generateSummary(
   resumeText: string,
-  jobDescription: string
+  jobDescription: string,
 ): Promise<SummaryResult> {
   const systemPrompt = `You are a professional resume writer. Generate a 3-4 line professional summary (50-80 words) that matches the target role, uses keywords from the job description, and is optimized for ATS scanning.
 
@@ -188,7 +206,7 @@ Respond with ONLY valid JSON:
 
   const userPrompt = `RESUME:\n${resumeText}\n\nTARGET ROLE:\n${jobDescription.slice(
     0,
-    400
+    400,
   )}`;
 
   const responseText = await callAI(systemPrompt, userPrompt);
@@ -198,5 +216,222 @@ Respond with ONLY valid JSON:
   } catch (error) {
     console.error("Failed to parse summary response:", responseText);
     throw new Error("Failed to parse summary response");
+  }
+}
+
+const VALID_LINE_TYPES = new Set<TailoredResumeLineType>([
+  "contact",
+  "subheading",
+  "paragraph",
+  "bullet",
+  "text",
+  "spacer",
+]);
+
+function renderLineForExport(line: TailoredResumeLine): string {
+  if (line.type === "spacer") return "";
+  if (line.type === "bullet") {
+    const indent = "  ".repeat(line.indent ?? 0);
+    return `${indent}• ${line.text}`;
+  }
+  return line.text;
+}
+
+function renderFullText(sections: TailoredResumeSection[]): string {
+  return sections
+    .map((section) => {
+      const body = section.lines.map(renderLineForExport).join("\n");
+      return `${section.heading}\n${body}`.trimEnd();
+    })
+    .join("\n\n");
+}
+
+function defaultChangesSummary(): TailoredResumeChangesSummary {
+  return {
+    bullets_rewritten: 0,
+    summary_updated: false,
+    skills_updated: false,
+  };
+}
+
+function normalizeTailoredResume(
+  raw: Partial<TailoredResume>,
+  context: Pick<TailoredResumeContext, "matchedKeywords" | "missingKeywords">,
+): TailoredResume {
+  const sections = (raw.sections ?? [])
+    .filter((section) => section.heading?.trim())
+    .map((section, sectionIndex) => {
+      const lines = (section.lines ?? [])
+        .filter((line) => line.type === "spacer" || line.text?.trim())
+        .map((line, lineIndex) => {
+          const type = VALID_LINE_TYPES.has(line.type) ? line.type : "text";
+          const normalized: TailoredResumeLine = {
+            type,
+            text: type === "spacer" ? "" : line.text.trim(),
+            order: typeof line.order === "number" ? line.order : lineIndex,
+          };
+
+          if (type === "bullet") {
+            normalized.indent =
+              typeof line.indent === "number" && line.indent >= 0
+                ? line.indent
+                : 0;
+          }
+
+          return normalized;
+        })
+        .sort((a, b) => a.order - b.order);
+
+      return {
+        heading: section.heading.trim(),
+        order: typeof section.order === "number" ? section.order : sectionIndex,
+        lines,
+      };
+    })
+    .filter((section) => section.lines.length > 0)
+    .sort((a, b) => a.order - b.order);
+
+  if (sections.length === 0) {
+    throw new Error("Tailored resume has no sections");
+  }
+
+  const keywords_added = Array.isArray(raw.keywords_added)
+    ? raw.keywords_added.filter((kw) => typeof kw === "string" && kw.trim())
+    : [];
+
+  const keywords_matched =
+    Array.isArray(raw.keywords_matched) && raw.keywords_matched.length > 0
+      ? raw.keywords_matched.filter((kw) => typeof kw === "string" && kw.trim())
+      : context.matchedKeywords;
+
+  const keywords_missing =
+    Array.isArray(raw.keywords_missing) && raw.keywords_missing.length > 0
+      ? raw.keywords_missing.filter((kw) => typeof kw === "string" && kw.trim())
+      : context.missingKeywords;
+
+  const changes_summary =
+    raw.changes_summary &&
+    typeof raw.changes_summary.bullets_rewritten === "number"
+      ? {
+          bullets_rewritten: raw.changes_summary.bullets_rewritten,
+          summary_updated: Boolean(raw.changes_summary.summary_updated),
+          skills_updated: Boolean(raw.changes_summary.skills_updated),
+        }
+      : defaultChangesSummary();
+
+  const full_text = renderFullText(sections);
+
+  return {
+    sections,
+    full_text,
+    keywords_added,
+    keywords_matched,
+    keywords_missing,
+    changes_summary,
+  };
+}
+
+/**
+ * Produce a complete tailored resume while preserving structure and facts.
+ */
+export async function tailorResume(
+  resumeText: string,
+  jobDescription: string,
+  context: TailoredResumeContext,
+): Promise<TailoredResume> {
+  const bulletContext =
+    context.bulletRewrites.length > 0
+      ? JSON.stringify(
+          context.bulletRewrites.map((b) => ({
+            original: b.original,
+            preferred_rewrite: b.rewritten_options[0] ?? b.original,
+          })),
+          null,
+          2,
+        )
+      : "None";
+
+  const matchedKeywordsContext =
+    context.matchedKeywords.length > 0
+      ? context.matchedKeywords.join(", ")
+      : "None";
+
+  const missingKeywordsContext =
+    context.missingKeywords.length > 0
+      ? context.missingKeywords.join(", ")
+      : "None";
+
+  const systemPrompt = `You are an expert resume editor. Tailor the candidate's resume for the target job.
+
+Return ONLY valid JSON. No markdown, no code fences, no explanation.
+
+STRICT RULES:
+1. Preserve every original section name and section order exactly.
+2. Preserve chronology within each section (jobs, education, projects newest-to-oldest or oldest-to-newest — match the source).
+3. Never fabricate employers, job titles, dates, degrees, certifications, projects, tools, or metrics.
+4. Improve wording only — stronger verbs, clearer phrasing, ATS-friendly terminology.
+5. Weave ATS keywords naturally into summary, skills, and bullets only when supported by the original resume.
+6. For bullets, use preferred_rewrite when it faithfully matches the original; otherwise rewrite without new facts.
+7. Use plain text only in line.text — no markdown, HTML, or special formatting characters.
+8. Use line types for PDF export: contact, subheading, paragraph, bullet, text, spacer.
+9. Assign sequential "order" fields on sections and lines starting at 0.
+10. For nested bullets, set "indent" (0 = top level).
+
+Return exactly this schema:
+{
+  "sections": [
+    {
+      "heading": "Experience",
+      "order": 0,
+      "lines": [
+        {
+          "type": "subheading",
+          "text": "Software Engineer — Acme Corp | Jan 2022 – Present",
+          "order": 0
+        },
+        {
+          "type": "bullet",
+          "text": "Developed React applications that reduced page load time by 40%.",
+          "order": 1,
+          "indent": 0
+        }
+      ]
+    }
+  ],
+  "keywords_added": ["PostgreSQL"],
+  "keywords_matched": ["React", "TypeScript"],
+  "keywords_missing": ["Docker"],
+  "changes_summary": {
+    "bullets_rewritten": 3,
+    "summary_updated": true,
+    "skills_updated": false
+  }
+}
+
+Do not include "full_text" — it is generated server-side from sections.`;
+
+  const userPrompt = `ORIGINAL RESUME:
+${resumeText}
+
+TARGET JOB DESCRIPTION:
+${jobDescription}
+
+ALREADY MATCHED KEYWORDS (preserve in output):
+${matchedKeywordsContext}
+
+MISSING KEYWORDS TO ADD NATURALLY (only where truthful):
+${missingKeywordsContext}
+
+BULLET REWRITES TO APPLY (use preferred_rewrite for matching bullets):
+${bulletContext}`;
+
+  const responseText = await callAI(systemPrompt, userPrompt, 4096);
+
+  try {
+    const parsed = JSON.parse(cleanJSON(responseText)) as Partial<TailoredResume>;
+    return normalizeTailoredResume(parsed, context);
+  } catch (error) {
+    console.error("Failed to parse tailored resume response:", responseText);
+    throw new Error("Failed to parse tailored resume response");
   }
 }

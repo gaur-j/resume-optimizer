@@ -26,3 +26,101 @@ Find and implement missing features that naturally fit the project
 Remove unnecessary complexity and improve maintainability
 
 Prioritize changes by impact, explain why each improvement matters, and avoid adding features that don't align with the project's goals.
+
+
+Phase 3: Save the Tailored Resume
+
+Update app/api/analyze/route.ts.
+Store the new tailored_resume object inside result_json.
+Maintain backward compatibility for older scans.
+Do not change existing ATS functionality.
+
+Phase 4: Build Resume Preview
+
+Create ResumePreview.tsx.
+Input:
+tailoredResume
+Render a clean professional resume.
+Use Tailwind.
+Support:
+- Summary
+- Experience
+- Education
+- Skills
+- Projects
+Make it printable.
+
+Phase 5: Suggested Changes
+
+Redesign Suggested Rewrites into Suggested Changes.
+For every suggestion show:
+Original
+Suggested
+Reason
+Category
+Accept
+Reject
+Accept All
+Reject All
+The UI should match the existing dashboard.
+
+Phase 6: Resume State
+
+Refactor dashboard state.
+Maintain:
+resumeText
+analysis
+tailoredResume
+acceptedResume
+Accepting a suggestion updates acceptedResume without mutating tailoredResume.
+
+Phase 7: Export
+
+Implement Resume Export.
+Create:
+lib/export-resume.ts
+Support:
+PDF
+DOCX
+TXT
+The exported document must use acceptedResume.
+Keep formatting professional and ATS-friendly.
+
+Phase 8: Final Polish
+
+components/
+    dashboard/
+        ResultsPanel.tsx
+        ResumePreview.tsx
+        SuggestedChanges.tsx
+        ExportResumeButton.tsx
+
+lib/
+    ai.ts
+    export-resume.ts
+    resume-diff.ts
+
+types/
+    analysis.ts
+    resume.ts
+
+app/
+    api/
+        analyze/
+        export/
+
+A stronger long-term architecture is:
+
+PDF
+    ↓
+Extract text
+    ↓
+AI parses resume into structured JSON
+    ↓
+AI tailors that structured JSON
+    ↓
+Suggested Changes
+    ↓
+Resume Preview
+    ↓
+PDF / DOCX Export

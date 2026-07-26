@@ -27,11 +27,78 @@ export interface ResumeScan {
 }
 
 /**
- * Complete analysis result from Claude
+ * Line-level types for structured resume output (PDF-export friendly).
+ */
+export type TailoredResumeLineType =
+  | "contact"
+  | "subheading"
+  | "paragraph"
+  | "bullet"
+  | "text"
+  | "spacer";
+
+/**
+ * A single line in the tailored resume, in document order.
+ */
+export interface TailoredResumeLine {
+  type: TailoredResumeLineType;
+  /** Plain text only — no markdown or HTML. */
+  text: string;
+  /** Position within the section; preserves chronology. */
+  order: number;
+  /** Bullet nesting depth for PDF export (0 = top level). */
+  indent?: number;
+}
+
+/**
+ * One resume section; heading name is preserved from the source resume.
+ */
+export interface TailoredResumeSection {
+  /** Original section name (e.g. "Experience", "Education"). */
+  heading: string;
+  /** Position in the document; preserves section order. */
+  order: number;
+  lines: TailoredResumeLine[];
+}
+
+/**
+ * Summary of edits applied during tailoring.
+ */
+export interface TailoredResumeChangesSummary {
+  bullets_rewritten: number;
+  summary_updated: boolean;
+  skills_updated: boolean;
+}
+
+/**
+ * Inputs passed to the tailoring step after ATS analysis and bullet rewrites.
+ */
+export interface TailoredResumeContext {
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  bulletRewrites: BulletRewrite[];
+}
+
+/**
+ * Complete tailored resume produced after ATS analysis and bullet rewrites.
+ */
+export interface TailoredResume {
+  sections: TailoredResumeSection[];
+  /** Plain-text rendering derived from sections; used for copy and PDF export. */
+  full_text: string;
+  keywords_added: string[];
+  keywords_matched: string[];
+  keywords_missing: string[];
+  changes_summary: TailoredResumeChangesSummary;
+}
+
+/**
+ * Complete analysis result from AI pipeline
  */
 export interface ScanAnalysisResult {
   ats_analysis: ATSAnalysis;
   bullet_rewrites: BulletRewrite[];
+  tailored_resume?: TailoredResume;
   professional_summary?: ProfessionalSummary;
 }
 
@@ -126,6 +193,8 @@ export interface AnalyzeApiResponse extends ApiResponse {
     scan_id: string;
     ats_analysis: ATSAnalysis;
     bullet_rewrites: BulletRewrite[];
+    tailored_resume: TailoredResume;
+    remaining_credits: number;
   };
 }
 

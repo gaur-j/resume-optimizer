@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { analyzeATS, rewriteBullets } from "@/lib/ai";
+import { analyzeATS, rewriteBullets, tailorResume } from "@/lib/ai";
 import { extractBullets } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
@@ -39,15 +39,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Claude API for ATS analysis
     const atsAnalysis = await analyzeATS(resume_text, jd_text);
 
-    // Extract bullets and rewrite them
     const bullets = extractBullets(resume_text);
     const bulletRewrites =
       bullets.length > 0 ? await rewriteBullets(bullets, jd_text) : [];
 
-    // Save scan to database
+    const tailoredResume = await tailorResume(resume_text, jd_text, {
+      matchedKeywords: atsAnalysis.matched_keywords,
+      missingKeywords: atsAnalysis.missing_keywords,
+      bulletRewrites,
+    });
+
     const { data: scanData, error: scanError } = await supabase
       .from("scans")
       .insert({
@@ -59,6 +62,7 @@ export async function POST(request: NextRequest) {
         result_json: {
           ats_analysis: atsAnalysis,
           bullet_rewrites: bulletRewrites,
+          tailored_resume: tailoredResume,
         },
       })
       .select()
@@ -88,6 +92,7 @@ export async function POST(request: NextRequest) {
         scan_id: scanData.id,
         ats_analysis: atsAnalysis,
         bullet_rewrites: bulletRewrites,
+        tailored_resume: tailoredResume,
         remaining_credits: remainingCredits,
       },
     });
@@ -96,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof Error && error.message.includes("API")) {
       return NextResponse.json(
-        { error: "Claude API error. Please try again." },
+        { error: "AI service error. Please try again." },
         { status: 503 }
       );
     }

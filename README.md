@@ -1,10 +1,14 @@
 # Resume Optimizer
 
-AI-powered resume optimizer that tailors your resume to a specific job description by improving ATS compatibility, keyword matching, and bullet point quality.
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-Upload your resume, paste a job description, and get an ATS-friendly, role-specific version that improves keyword matching, readability, and impact.
+AI-powered resume optimizer that tailors your resume to specific job descriptions by improving ATS compatibility, keyword matching, bullet points, and overall impact.
 
-[Live Demo](https://ai-resum-optimizer.vercel.app/) · [Troubleshooting](public/troubleshooting/pdf-parse-vercel-fix.md) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
+Upload your resume, paste a job description, and get an ATS-friendly, role-specific version designed to improve readability and recruiter visibility.
+
+[Live Demo](https://ai-resum-optimizer.vercel.app/) · [Troubleshooting](docs/troubleshooting/pdf-parse-vercel-fix.md) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
 ---
 
@@ -19,7 +23,7 @@ That leads to:
 - missed recruiter attention
 - wasted time rewriting the same resume for every job
 
-Resume Optimizer helps job seekers quickly turn one resume into many role-specific versions without starting from scratch.
+Resume Optimizer helps job seekers quickly transform one resume into multiple role-specific versions without starting from scratch.
 
 ---
 
@@ -29,8 +33,8 @@ Resume Optimizer helps job seekers quickly turn one resume into many role-specif
 - Analyzes job descriptions
 - Suggests keyword and content improvements
 - Rewrites weak bullet points into stronger, impact-driven bullets
-- Produces a more ATS-friendly version
-- Supports export and reuse across applications
+- Produces ATS-friendly resume versions
+- Supports exporting and reuse across applications
 
 ---
 
@@ -39,26 +43,48 @@ Resume Optimizer helps job seekers quickly turn one resume into many role-specif
 ### Home
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="/public/screenshots/home-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="/public/screenshots/home-light.png">
-  <img alt="Home screenshot" src="/docs/screenshots/home-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./public/screenshots/home-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="./public/screenshots/home-light.png">
+  <img alt="Home screenshot" src="./public/screenshots/home-light.png">
 </picture>
 
 ### Upload Page
 
-![Upload_Page](/public/screenshots/upload-page.png)
+![Upload Page](./public/screenshots/upload-page.png)
 
 ### Upload Resume
 
-![Upload](/public/screenshots/resume-upload.png)
+![Resume Upload](./public/screenshots/resume-upload.png)
 
 ### Job Description
 
-![Description](/public/screenshots/job-description.png)
+![Job Description](./public/screenshots/job-description.png)
 
 ### Optimized Result
 
-![Result](/public/screenshots/analyzer.png)
+![Optimized Result](./public/screenshots/analyzer.png)
+
+---
+
+## Demo
+
+Add a short GIF/video showing:
+
+```
+Upload Resume
+      ↓
+Paste Job Description
+      ↓
+AI Analysis
+      ↓
+Optimized Resume
+```
+
+Example:
+
+```md
+![Resume Optimizer Demo](./public/demo.gif)
+```
 
 ---
 
@@ -79,7 +105,7 @@ Resume Optimizer helps job seekers quickly turn one resume into many role-specif
 - ATS-oriented optimization
 - Bullet rewriting
 - Keyword matching
-- Clear before/after improvements
+- Before/after improvements
 - Fast, simple UI
 - Mobile-friendly layout
 
@@ -94,18 +120,19 @@ Resume Optimizer helps job seekers quickly turn one resume into many role-specif
 - Shadcn UI
 - Sonner
 - PDF Parser
-- AI service: Grok, Gemini
+- AI: Groq API, Google Gemini
 
 ---
 
 ## Project structure
 
-```bash id="7sbdq"
+```bash
 app/          # Routes and pages
 components/   # Reusable UI components
 lib/          # Utilities and services
 public/       # Static assets
 types/        # Shared TypeScript types
+docs/         # Documentation and troubleshooting guides
 ```
 
 ---
@@ -119,9 +146,11 @@ types/        # Shared TypeScript types
 
 ### Install
 
-```bash id="k3waz"
+```bash
 git clone https://github.com/gaur-j/resume-optimizer.git
+
 cd resume-optimizer
+
 npm install
 ```
 
@@ -129,46 +158,62 @@ npm install
 
 Create a `.env.local` file:
 
-```bash id="k9mde"
+```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-AI_API_KEY=your_api_key_here
-NEXT_PUBLIC_SUPABASE_URL=SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=SUPABASE_ANN_KEY
-SUPABASE_SERVICE_ROLE_KEY=SUPABASE_ROLE_KEY
+
+GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=your_gemini_api_key
+
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
+
+Never commit `.env.local` or expose your Supabase service role key publicly.
+
+See the example environment file:
+
+[.env.example](.env.example)
 
 ### Run locally
 
-```bash id="0kq91"
+```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
+
+```
+http://localhost:3000
+```
 
 ---
 
 ## Pricing
 
+The application is currently focused on building the core resume optimization experience.
+
+Planned pricing features:
+
 ### Free
 
-- limited resume optimizations
-- basic tailoring
-- standard export
+- Limited resume optimizations
+- Basic tailoring
+- Standard export
 
 ### Pro
 
-- unlimited optimizations
-- stronger AI rewrites
-- resume history
-- premium export options
-- job-specific tailoring
+- Unlimited optimizations
+- Advanced AI rewrites
+- Resume history
+- Premium export options
 
 ### Team / Career Services
 
-- multi-user access
-- shared admin view
-- usage analytics
-- support for recruiters, bootcamps, or universities
+- Multi-user access
+- Shared admin view
+- Usage analytics
+- Recruiter and education support
 
 ---
 
@@ -179,56 +224,58 @@ Open `http://localhost:3000`.
 - [x] Resume upload
 - [x] Job description input
 - [x] AI optimization
-- Export flow
+- [x] Export flow
 
 ## Phase 2 — Product polish
 
-- Resume history
-- ATS scoring
-- Better UI/UX
-- Saved sessions
+- [ ] Resume history
+- [ ] ATS scoring
+- [ ] Better UI/UX
+- [ ] Saved sessions
 
 ## Phase 3 — Monetization
 
-- Free tier limits
-- Pro subscription
-- Payment integration
-- Usage analytics
+- [ ] Free tier limits
+- [ ] Pro subscription
+- [ ] Payment integration
+- [ ] Usage analytics
 
 ## Phase 4 — Expansion
 
-- Cover letters
-- LinkedIn optimization
-- Application tracker
-- Recruiter tools
+- [ ] Cover letters
+- [ ] LinkedIn optimization
+- [ ] Application tracker
+- [ ] Recruiter tools
 
 ---
 
 ## FAQ
 
-### Q1 Is my resume data safe?
+### Q1. Is my resume data safe?
 
-A: Your resume text is stored only in your account and is never shared, sold, or used to train models beyond generating your own analysis.
+Your resume text is stored only for providing the requested service and is not sold or shared.
 
-### Q2 What ATS systems does this work for?
+### Q2. What ATS systems does this support?
 
-A: We test against patterns used by the most common platforms Indian companies use, including Workday, Greenhouse, and Naukri's internal parsing.
+The optimizer focuses on common ATS patterns used by platforms such as Workday, Greenhouse, and other resume parsing systems.
 
-### Q3 What file types are supported?
+### Q3. What file types are supported?
 
-A: PDF TYPE
+Currently supported:
 
-### Q4 Does it help freshers?
+- PDF resumes
 
-A: Yes. It should work for freshers and experienced candidates.
+### Q4. Does it help freshers?
 
-### Q5 Is there really no score cap or hidden fee?
+Yes. It works for both freshers and experienced candidates.
 
-A: Your 3 free scans are genuinely free — no card required. After that, you pay only for the scans you use, with no recurring subscription.
+### Q5. Is there a hidden subscription?
 
-### Q6 How is this different from just using ChatGPT?
+Free usage limits and future paid features will be clearly communicated. No hidden charges.
 
-A: We combine ATS-specific scoring logic with AI rewriting, so you get a structured score and gap analysis, not just a generic opinion.
+### Q6. How is this different from using ChatGPT?
+
+Resume Optimizer combines ATS-focused analysis, keyword matching, and structured resume improvements instead of providing only a general AI response.
 
 ---
 

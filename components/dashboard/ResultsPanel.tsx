@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { ATSAnalysis, BulletRewrite } from "@/types/analysis";
+import type {
+  ATSAnalysis,
+  BulletRewrite,
+  TailoredResume,
+} from "@/types/analysis";
+
+import ExportResumeButton from "./ExportResumeButton";
+import SuggestedChanges from "./SuggestedChanges";
 
 interface ResultsPanelProps {
   atsAnalysis: ATSAnalysis;
   bulletRewrites: BulletRewrite[];
+  tailoredResume: TailoredResume;
+  // An editable working copy derived from tailoredResume that holds accepted edits
+  acceptedResume?: TailoredResume | null;
+  // Handler invoked when a user accepts a suggested rewrite; should update acceptedResume
+  onAcceptSuggestion?: (bulletIndex: number, selected: string) => void;
 }
 
 function scoreColor(score: number) {
@@ -23,13 +35,24 @@ function scoreRing(score: number) {
 export function ResultsPanel({
   atsAnalysis,
   bulletRewrites,
+  tailoredResume,
+  acceptedResume,
+  onAcceptSuggestion,
 }: ResultsPanelProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedResume, setCopiedResume] = useState(false);
 
   function copyBullet(text: string, index: number) {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 1500);
+  }
+
+  function copyTailoredResume() {
+    const text = acceptedResume?.full_text ?? tailoredResume.full_text;
+    navigator.clipboard.writeText(text);
+    setCopiedResume(true);
+    setTimeout(() => setCopiedResume(false), 1500);
   }
 
   const circumference = 2 * Math.PI * 45;
@@ -174,43 +197,77 @@ export function ResultsPanel({
         </div>
       )}
 
-      {/* Bullet Rewrites */}
+      {/* Tailored Resume */}
+      <div className="bg-card rounded-lg border border-border p-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground font-mono">
+              Tailored Resume
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {acceptedResume
+                ? "Showing your accepted edits — the original tailored resume is preserved below."
+                : "Full resume with improved wording and ATS keywords added naturally."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ExportResumeButton acceptedResume={acceptedResume ?? tailoredResume} filename={undefined} />
+
+            <button
+              onClick={copyTailoredResume}
+              aria-label={
+                copiedResume
+                  ? "Tailored resume copied"
+                  : "Copy tailored resume to clipboard"
+              }
+              className="text-xs text-primary hover:text-primary/80 whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-2 py-1"
+            >
+              {copiedResume ? "Copied!" : "Copy all"}
+            </button>
+          </div>
+        </div>
+
+        {tailoredResume.keywords_added.length > 0 && (
+          <div className="mb-4">
+            <div className="text-sm font-medium text-primary mb-2">
+              Keywords added
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tailoredResume.keywords_added.map((kw, i) => (
+                <span
+                  key={i}
+                  className="text-xs bg-primary/10 text-primary border border-primary/30 px-2 py-1 rounded-full"
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <pre className="whitespace-pre-wrap text-sm text-foreground bg-secondary rounded-lg p-4 font-sans leading-relaxed overflow-x-auto">
+          {acceptedResume?.full_text ?? tailoredResume.full_text}
+        </pre>
+      </div>
+
+      {/* Suggested Changes (delegated component) */}
       {bulletRewrites.length > 0 && (
         <div className="bg-card rounded-lg border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Suggested Rewrites
-          </h2>
-          <div className="space-y-4">
-            {bulletRewrites.map((bullet, i) => (
-              <div key={i} className="border border-border/50 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Original
-                </div>
-                <div className="text-sm text-muted-foreground line-through mb-3">
-                  {bullet.original}
-                </div>
-                {bullet.rewritten_options.map((option, j) => (
-                  <div
-                    key={j}
-                    className="flex items-start justify-between gap-2 bg-approved/10 rounded-lg p-3 mb-2 last:mb-0"
-                  >
-                    <p className="text-sm text-foreground">{option}</p>
-                    <button
-                      onClick={() => copyBullet(option, i * 10 + j)}
-                      aria-label={
-                        copiedIndex === i * 10 + j
-                          ? "Copied to clipboard"
-                          : "Copy this rewrite to clipboard"
-                      }
-                      className="text-xs text-primary hover:text-primary-foreground whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1"
-                    >
-                      {copiedIndex === i * 10 + j ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+          <SuggestedChanges
+            bulletRewrites={bulletRewrites}
+            onAccept={(index, selected) => onAcceptSuggestion && onAcceptSuggestion(index, selected)}
+            onAcceptAll={() => {
+              // Accept the first option for each suggestion by default
+              bulletRewrites.forEach((b, i) => {
+                const first = b.rewritten_options[0];
+                if (first) onAcceptSuggestion && onAcceptSuggestion(i, first);
+              });
+            }}
+            onRejectAll={() => {
+              // no-op: UI will mark as rejected locally in SuggestedChanges
+            }}
+          />
         </div>
       )}
     </div>
