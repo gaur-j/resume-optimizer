@@ -1,6 +1,7 @@
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ChevronDown } from "lucide-react";
 
 const FAQS = [
@@ -397,11 +398,7 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-border py-8 bg-card">
-          <div className="max-w-7xl mx-auto px-4 text-center text-muted-foreground text-sm">
-            <p>© 2026 Resume AI Optimizer. Made for Indian job seekers.</p>
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     </AuthModalProvider>
   );

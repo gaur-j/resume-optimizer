@@ -6,41 +6,11 @@ import {
   TailoredResumeLine,
 } from "@/types/analysis";
 
-function createTxtBuffer(resume: TailoredResume): Buffer {
-  return Buffer.from(resume.full_text || "", "utf-8");
+function createTxtBuffer(resume: TailoredResume): Uint8Array {
+  return new Uint8Array(Buffer.from(resume.full_text || "", "utf-8"));
 }
 
-async function createDocxBuffer(resume: TailoredResume): Promise<Buffer> {
-  const doc = new Document({
-    sections: [],
-    styles: {
-      paragraphStyles: [
-        {
-          id: "Heading1",
-          name: "Heading 1",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 28,
-            bold: true,
-          },
-        },
-        {
-          id: "Heading2",
-          name: "Heading 2",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 20,
-            bold: true,
-          },
-        },
-      ],
-    },
-  });
-
+async function createDocxBuffer(resume: TailoredResume): Promise<Uint8Array> {
   const children: Paragraph[] = [];
 
   function pushLine(line: TailoredResumeLine) {
@@ -107,14 +77,44 @@ async function createDocxBuffer(resume: TailoredResume): Promise<Buffer> {
     section.lines.forEach(pushLine);
   });
 
-  doc.addSection({
-    children,
+  const doc = new Document({
+    styles: {
+      paragraphStyles: [
+        {
+          id: "Heading1",
+          name: "Heading 1",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: {
+            size: 28,
+            bold: true,
+          },
+        },
+        {
+          id: "Heading2",
+          name: "Heading 2",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: {
+            size: 20,
+            bold: true,
+          },
+        },
+      ],
+    },
+    sections: [
+      {
+        children,
+      },
+    ],
   });
 
-  return Buffer.from(await Packer.toBuffer(doc));
+  return new Uint8Array(await Packer.toBuffer(doc));
 }
 
-async function createPdfBuffer(resume: TailoredResume): Promise<Buffer> {
+async function createPdfBuffer(resume: TailoredResume): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
 
   const normalFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -279,7 +279,7 @@ async function createPdfBuffer(resume: TailoredResume): Promise<Buffer> {
   }
 
   const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
+  return new Uint8Array(pdfBytes);
 }
 
 export type ExportFormat = "pdf" | "docx" | "txt";
@@ -288,7 +288,7 @@ export async function exportResume(
   acceptedResume: TailoredResume | null,
   format: ExportFormat = "pdf"
 ): Promise<{
-  buffer: Buffer;
+  buffer: Uint8Array;
   filename: string;
   mime: string;
 } | null> {

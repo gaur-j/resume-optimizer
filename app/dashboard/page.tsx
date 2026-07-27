@@ -14,6 +14,7 @@ import type {
   TailoredResume,
 } from "@/types/analysis";
 import { Textarea } from "@/components/ui/textarea";
+import { SiteFooter } from "@/components/SiteFooter";
 
 interface AnalysisResults {
   scan_id: string;
@@ -134,7 +135,9 @@ export default function DashboardPage() {
       setBulletRewrites(bullet_rewrites || []);
       setTailoredResume(tailored_resume ?? null);
       // create a deep copy for acceptedResume so user accepts don't mutate original tailoredResume
-      setAcceptedResume(tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null);
+      setAcceptedResume(
+        tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null
+      );
       fetchCredits();
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -227,42 +230,49 @@ export default function DashboardPage() {
               {analysis && tailoredResume && !loading && (
                 <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
                   <ResultsPanel
-                                  atsAnalysis={analysis}
-                                  bulletRewrites={bulletRewrites}
-                                  tailoredResume={tailoredResume}
-                                  acceptedResume={acceptedResume}
-                                  onAcceptSuggestion={(bulletIndex: number, selected: string) => {
-                                    if (!tailoredResume || !acceptedResume) return;
+                    atsAnalysis={analysis}
+                    bulletRewrites={bulletRewrites}
+                    tailoredResume={tailoredResume}
+                    acceptedResume={acceptedResume}
+                    onAcceptSuggestion={(
+                      bulletIndex: number,
+                      selected: string
+                    ) => {
+                      if (!tailoredResume || !acceptedResume) return;
 
-                                    // Work on a deep copy so we never mutate the original tailoredResume
-                                    const newAccepted = JSON.parse(JSON.stringify(acceptedResume));
+                      // Work on a deep copy so we never mutate the original tailoredResume
+                      const newAccepted = JSON.parse(
+                        JSON.stringify(acceptedResume)
+                      );
 
-                                    // Update summary counter if present
-                                    if (newAccepted.changes_summary) {
-                                      newAccepted.changes_summary.bullets_rewritten =
-                                        (newAccepted.changes_summary.bullets_rewritten || 0) + 1;
-                                    }
+                      // Update summary counter if present
+                      if (newAccepted.changes_summary) {
+                        newAccepted.changes_summary.bullets_rewritten =
+                          (newAccepted.changes_summary.bullets_rewritten || 0) +
+                          1;
+                      }
 
-                                    // Find the original text from the bulletRewrites list and replace first occurrence
-                                    const original = bulletRewrites[bulletIndex]?.original;
-                                    if (original) {
-                                      const idx = newAccepted.full_text.indexOf(original);
-                                      if (idx !== -1) {
-                                        newAccepted.full_text =
-                                          newAccepted.full_text.slice(0, idx) +
-                                          selected +
-                                          newAccepted.full_text.slice(idx + original.length);
-                                      } else {
-                                        // fallback: append the selected rewrite at the end
-                                        newAccepted.full_text = newAccepted.full_text + "\n" + selected;
-                                      }
-                                    }
+                      // Find the original text from the bulletRewrites list and replace first occurrence
+                      const original = bulletRewrites[bulletIndex]?.original;
+                      if (original) {
+                        const idx = newAccepted.full_text.indexOf(original);
+                        if (idx !== -1) {
+                          newAccepted.full_text =
+                            newAccepted.full_text.slice(0, idx) +
+                            selected +
+                            newAccepted.full_text.slice(idx + original.length);
+                        } else {
+                          // fallback: append the selected rewrite at the end
+                          newAccepted.full_text =
+                            newAccepted.full_text + "\n" + selected;
+                        }
+                      }
 
-                                    setAcceptedResume(newAccepted);
-                                  }}
-                                />
-                              </div>
-                            )}
+                      setAcceptedResume(newAccepted);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
