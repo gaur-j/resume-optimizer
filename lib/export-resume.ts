@@ -38,6 +38,21 @@ async function createDocxBuffer(resume: TailoredResume): Promise<Uint8Array> {
         );
         return;
 
+      case "contact":
+        children.push(
+          new Paragraph({
+            spacing: { after: 120 },
+            children: [
+              new TextRun({
+                text,
+                size: 20, // slightly smaller than body (24 half-points = 12pt default)
+                color: "555555",
+              }),
+            ],
+          })
+        );
+        return;
+
       case "bullet":
         children.push(
           new Paragraph({
@@ -191,21 +206,37 @@ async function createPdfBuffer(resume: TailoredResume): Promise<Uint8Array> {
     }
   }
 
-  // Title
-  const title =
-    resume.sections[0]?.lines[0]?.text?.trim() ||
-    resume.sections[0]?.heading ||
-    "Resume";
+  // Title — pulled from the very first line of the first section (usually
+  // the candidate's name). This line gets a special larger/bold render up
+  // top, so it must be SKIPPED when the main loop below reaches it again —
+  // otherwise the name renders twice: once here, once as a normal line.
+  const firstSection = resume.sections[0];
+  const titleLine = firstSection?.lines[0];
+  const title = titleLine?.text?.trim() || firstSection?.heading || "Resume";
 
-  drawLines(
-    wrapText(title, boldFont, titleSize, page.getWidth() - margin * 2),
-    {
-      fontSize: titleSize,
-      bold: true,
-    }
-  );
+  // A bit more vertical room than the shared lineHeight, since the title
+  // is drawn larger (titleSize) than body text — prevents the next
+  // element from sitting too close under a large-font title.
+  const titleLineHeight = Math.round(titleSize * 1.25);
 
-  cursorY -= 10;
+  for (const line of wrapText(
+    title,
+    boldFont,
+    titleSize,
+    page.getWidth() - margin * 2
+  )) {
+    ensurePage();
+    page.drawText(line, {
+      x: margin,
+      y: cursorY,
+      size: titleSize,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+    cursorY -= titleLineHeight;
+  }
+
+  cursorY -= 6;
 
   for (const section of resume.sections) {
     // Section Heading
@@ -225,9 +256,30 @@ async function createPdfBuffer(resume: TailoredResume): Promise<Uint8Array> {
     cursorY -= 4;
 
     for (const line of section.lines) {
+      // Skip the exact line already rendered as the title above — without
+      // this, the first line of the first section (typically the name)
+      // gets drawn a second time here.
+      if (section === firstSection && line === titleLine) continue;
+
       switch (line.type) {
         case "spacer":
           cursorY -= lineHeight / 2;
+          break;
+
+        case "contact":
+          // Smaller, non-bold, slightly muted-looking line for contact
+          // details (email | phone | LinkedIn), distinct from body text.
+          drawLines(
+            wrapText(
+              line.text,
+              normalFont,
+              bodySize - 1,
+              page.getWidth() - margin * 2
+            ),
+            {
+              fontSize: bodySize - 1,
+            }
+          );
           break;
 
         case "subheading":
@@ -263,6 +315,8 @@ async function createPdfBuffer(resume: TailoredResume): Promise<Uint8Array> {
           break;
         }
 
+        case "paragraph":
+        case "text":
         default:
           drawLines(
             wrapText(
