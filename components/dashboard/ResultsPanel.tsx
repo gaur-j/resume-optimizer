@@ -18,6 +18,13 @@ interface ResultsPanelProps {
   acceptedResume?: TailoredResume | null;
   // Handler invoked when a user accepts a suggested rewrite; should update acceptedResume
   onAcceptSuggestion?: (bulletIndex: number, selected: string) => void;
+  // Total suggestions the AI generated, which may exceed bulletRewrites.length
+  // if the server truncated the array for a free-tier user.
+  totalSuggestionsAvailable?: number;
+  // Whether this user has ever purchased credits — unlocks every suggestion.
+  isPaidUser?: boolean;
+  // Opens the buy-credits modal from the "unlock all suggestions" teaser.
+  onUpgradeClick?: () => void;
 }
 
 function scoreColor(score: number) {
@@ -38,6 +45,9 @@ export function ResultsPanel({
   tailoredResume,
   acceptedResume,
   onAcceptSuggestion,
+  totalSuggestionsAvailable,
+  isPaidUser,
+  onUpgradeClick,
 }: ResultsPanelProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedResume, setCopiedResume] = useState(false);
@@ -212,7 +222,10 @@ export function ResultsPanel({
           </div>
 
           <div className="flex items-center gap-3">
-            <ExportResumeButton acceptedResume={acceptedResume ?? tailoredResume} filename={undefined} />
+            <ExportResumeButton
+              acceptedResume={acceptedResume ?? tailoredResume}
+              filename={undefined}
+            />
 
             <button
               onClick={copyTailoredResume}
@@ -252,21 +265,17 @@ export function ResultsPanel({
       </div>
 
       {/* Suggested Changes (delegated component) */}
-      {bulletRewrites.length > 0 && (
+      {(bulletRewrites.length > 0 ||
+        (totalSuggestionsAvailable ?? 0) > bulletRewrites.length) && (
         <div className="bg-card rounded-lg border border-border p-6">
           <SuggestedChanges
             bulletRewrites={bulletRewrites}
-            onAccept={(index, selected) => onAcceptSuggestion && onAcceptSuggestion(index, selected)}
-            onAcceptAll={() => {
-              // Accept the first option for each suggestion by default
-              bulletRewrites.forEach((b, i) => {
-                const first = b.rewritten_options[0];
-                if (first) onAcceptSuggestion && onAcceptSuggestion(i, first);
-              });
-            }}
-            onRejectAll={() => {
-              // no-op: UI will mark as rejected locally in SuggestedChanges
-            }}
+            totalSuggestionsAvailable={totalSuggestionsAvailable}
+            isPaidUser={isPaidUser}
+            onUpgradeClick={onUpgradeClick}
+            onAccept={(index, selected) =>
+              onAcceptSuggestion && onAcceptSuggestion(index, selected)
+            }
           />
         </div>
       )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { analyzeATS, rewriteBullets, tailorResume } from "@/lib/ai";
 import { extractBullets } from "@/lib/utils";
+import { isPaidUser, visibleSuggestionCount } from "@/lib/plan";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,10 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check user's scan credits
+    // Check user's scan credits — also pull total_paid_scans now, since that's
+    // what decides how many suggestions this user is allowed to see.
     const { data: userData } = await supabase
       .from("users")
-      .select("scan_credits")
+      .select("scan_credits, total_paid_scans")
       .eq("id", user.id)
       .single();
 
@@ -51,6 +53,10 @@ export async function POST(request: NextRequest) {
       bulletRewrites,
     });
 
+    // Save the FULL result to the database — nothing is lost. Truncation
+    // only happens on the response below. This means if this user upgrades
+    // later, a future "view past scan" feature could show the complete
+    // result retroactively without re-running the AI pipeline.
     const { data: scanData, error: scanError } = await supabase
       .from("scans")
       .insert({
@@ -86,12 +92,24 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", user.id);
 
+    // Enforce the free-tier suggestion limit HERE, server-side — this is
+    // what makes it a real limit rather than a UI-only blur effect that
+    // anyone could bypass by reading the network response in devtools.
+    const paid = isPaidUser(userData.total_paid_scans);
+    const visibleCount = visibleSuggestionCount(
+      bulletRewrites.length,
+      userData.total_paid_scans
+    );
+    const visibleBulletRewrites = bulletRewrites.slice(0, visibleCount);
+
     return NextResponse.json({
       success: true,
       data: {
         scan_id: scanData.id,
         ats_analysis: atsAnalysis,
-        bullet_rewrites: bulletRewrites,
+        bullet_rewrites: visibleBulletRewrites,
+        total_suggestions_available: bulletRewrites.length,
+        is_paid_user: paid,
         tailored_resume: tailoredResume,
         remaining_credits: remainingCredits,
       },

@@ -14,6 +14,7 @@ import type {
   TailoredResume,
 } from "@/types/analysis";
 import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle2 } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 
 interface AnalysisResults {
@@ -39,6 +40,13 @@ export default function DashboardPage() {
   const [acceptedResume, setAcceptedResume] = useState<TailoredResume | null>(
     null
   );
+
+  // Plan info for the CURRENT scan, straight from the analyze response —
+  // this is what decides how SuggestedChanges renders (locked teaser or not).
+  const [totalSuggestionsAvailable, setTotalSuggestionsAvailable] = useState<
+    number | undefined
+  >(undefined);
+  const [isPaidUser, setIsPaidUser] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -83,7 +91,7 @@ export default function DashboardPage() {
     e.preventDefault();
 
     if (!resumeText.trim() || !jobDescription.trim()) {
-      setError("Please add your resume and the job description first");
+      setError("Please upload your resume and the job description first");
       return;
     }
 
@@ -99,6 +107,7 @@ export default function DashboardPage() {
     setBulletRewrites([]);
     setTailoredResume(null);
     setAcceptedResume(null);
+    setTotalSuggestionsAvailable(undefined);
 
     requestAnimationFrame(() => {
       resultsRef.current?.scrollIntoView({
@@ -130,10 +139,18 @@ export default function DashboardPage() {
         return;
       }
 
-      const { ats_analysis, bullet_rewrites, tailored_resume } = data.data;
+      const {
+        ats_analysis,
+        bullet_rewrites,
+        tailored_resume,
+        total_suggestions_available,
+        is_paid_user,
+      } = data.data;
       setAnalysis(ats_analysis);
       setBulletRewrites(bullet_rewrites || []);
       setTailoredResume(tailored_resume ?? null);
+      setTotalSuggestionsAvailable(total_suggestions_available);
+      setIsPaidUser(Boolean(is_paid_user));
       // create a deep copy for acceptedResume so user accepts don't mutate original tailoredResume
       setAcceptedResume(
         tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null
@@ -148,32 +165,32 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-card">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 rounded-3xl">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:py-12 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary badge" />
             ATS Resume Analysis
           </div>
 
-          <h1 className="mt-5 font-mono text-4xl font-semibold tracking-tight text-foreground">
+          <h1 className="mt-4 sm:mt-5 font-mono text-3xl sm:text-5xl font-semibold leading-tight text-foreground">
             Analyze Your Resume
           </h1>
 
-          <p className="mt-3 max-w-2xl text-muted-foreground">
+          <p className="mt-3 max-w-3xl text-muted-foreground text-base leading-7">
             Upload your resume and match it with a job description to find ATS
             score, missing keywords, and AI-powered improvements.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:gap-10 lg:grid-cols-3">
           {/* Main */}
-          <div className="space-y-8 lg:col-span-2">
-            <div className="rounded-2xl border border-border bg-card p-8 shadow-xl">
-              <form onSubmit={handleAnalyze} className="space-y-8">
+          <div className="space-y-6 lg:space-y-8 lg:col-span-2">
+            <div className="max-w-3xl rounded-3xl border border-border bg-card/90 p-4 sm:p-8 shadow-xl">
+              <form onSubmit={handleAnalyze} className="space-y-6 lg:space-y-8">
                 <div>
-                  <label className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  <label className="mb-3 block font-mono text-xs tracking-wide uppercase text-muted-foreground">
                     Your Resume
                   </label>
 
@@ -186,7 +203,7 @@ export default function DashboardPage() {
                 <div className="border-t border-border pt-8">
                   <label
                     htmlFor="job-description"
-                    className="mb-3 block font-mono text-xs uppercase tracking-widest text-muted-foreground"
+                    className="mb-3 block font-mono text-xs tracking-wide uppercase text-muted-foreground"
                   >
                     Job Description
                   </label>
@@ -196,7 +213,7 @@ export default function DashboardPage() {
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the job description here..."
-                    className="min-h-[220px] rounded-xl border-border font-sans bg-background px-4 py-3 focus-visible:ring-primary"
+                    className="min-h-[180px] sm:min-h-[220px] text-base rounded-xl border font-sans bg-background px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
                   />
                 </div>
 
@@ -209,31 +226,38 @@ export default function DashboardPage() {
                 <Button
                   type="submit"
                   disabled={loading || creditsLoading}
-                  className="h-12 w-full bg-primary hover:bg-primary/90 font-sans shadow-sm"
+                  className="h-14 font-medium text-base rounded-xl w-full bg-primary hover:bg-primary/90 font-sans shadow-md hover:shadow-lg transition-all duration-300"
                 >
                   {loading ? "Analyzing..." : "Get ATS Score →"}
                 </Button>
               </form>
             </div>
 
-            <div ref={resultsRef}>
+            <div ref={resultsRef} className="scroll-mt-24">
               {loading && (
                 <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
-                  <h2 className="mb-6 font-mono text-2xl font-semibold text-foreground">
+                  <h2 className="mb-6 font-mono text-xl sm:text-2xl font-semibold text-foreground">
                     Analysis Results
                   </h2>
+                  <p className="mt-2 ml-2 text-xs sm:text-sm text-muted-foreground">
+                    ATS score, Keyword analysis, Resume suggestions and Tailored
+                    resume.
+                  </p>
 
                   <ResultsPanelSkeleton />
                 </div>
               )}
 
               {analysis && tailoredResume && !loading && (
-                <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
+                <div className="motion-safe:animate-in motion-safe:fade-in rounded-3xl border border-border bg-card p-5 sm:p-8 shadow-xl">
                   <ResultsPanel
                     atsAnalysis={analysis}
                     bulletRewrites={bulletRewrites}
                     tailoredResume={tailoredResume}
                     acceptedResume={acceptedResume}
+                    totalSuggestionsAvailable={totalSuggestionsAvailable}
+                    isPaidUser={isPaidUser}
+                    onUpgradeClick={() => setShowBuyModal(true)}
                     onAcceptSuggestion={(
                       bulletIndex: number,
                       selected: string
@@ -277,24 +301,49 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 rounded-3xl text-pretty">
             <CreditsCard
               credits={credits}
               loading={creditsLoading}
               onBuyMore={() => setShowBuyModal(true)}
             />
 
-            <div className="rounded-2xl border border-border bg-secondary p-6 shadow-xl">
-              <h3 className="mb-4 font-mono text-lg font-semibold text-foreground">
+            <div className="rounded-3xl border border-border bg-secondary p-6 shadow-xl">
+              <h3 className="mb-4 font-mono text-lg sm:text-xl font-semibold text-foreground">
                 💡 Quick Tips
               </h3>
 
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li>✓ Match keywords from the job description.</li>
-                <li>✓ Add measurable achievements.</li>
-                <li>✓ Use action verbs like Built, Led, Designed.</li>
-                <li>✓ Keep formatting ATS-friendly.</li>
-                <li>✓ Tailor every resume to the job.</li>
+                <li>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                    <span>Match keywords from the job description.</span>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                    <span>Add measurable achievements.</span>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                    <span>Use action verbs like Built, Led, Designed.</span>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                    <span>Keep formatting ATS-friendly.</span>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                    <span>Tailor every resume to the job.</span>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
