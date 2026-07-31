@@ -81,7 +81,6 @@ export default function Home() {
 
         {/* Hero */}
         <section className="relative overflow-hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 sm:pt-16 sm:pb-20">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="h-72 w-72 rounded-full bg-primary/20 blur-[90px]" />
           </div>
@@ -199,7 +198,6 @@ export default function Home() {
 
         {/* How it works */}
         <section className="py-10 sm:py-20">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
             <h2 className="font-mono text-2xl font-semibold tracking-tight text-center text-foreground mb-2 text-pretty">
               How it works
@@ -227,7 +225,7 @@ export default function Home() {
               ].map((item) => (
                 <div
                   key={item.step}
-                  className="text-center flex flex-col items-center sm:block"
+                  className="text-center flex flex-col items-center"
                 >
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-base sm:text-lg font-mono font-semibold mb-3 sm:mb-4">
                     {item.step}
@@ -246,7 +244,6 @@ export default function Home() {
 
         {/* Category breakdown — inspired by how leading CheckIconers present scoring */}
         <section className="bg-secondary py-10 sm:py-20">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
             <h2 className="font-mono text-xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-center text-foreground mb-2 text-pretty">
               One score isn&apos;t enough — so we don&apos;t give you just one
@@ -280,9 +277,8 @@ export default function Home() {
         </section>
 
         {/* Before / After */}
-        <section className="py-14 sm:py-20">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-10 sm:py-20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8">
             <h2 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-semibold text-center text-foreground mb-2 tracking-tight text-pretty">
               See the difference
             </h2>
@@ -388,8 +384,7 @@ export default function Home() {
         {/* FAQ — native details/summary accordion: shortens the scroll on
             mobile with zero client JS, and stays fully crawlable by
             search engines and readable without JS if it ever fails to load. */}
-        <section className="py-14 sm:py-20">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+        <section className="py-10 sm:py-20">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-center text-foreground mb-12 text-pretty">
               Frequently asked questions
@@ -399,13 +394,13 @@ export default function Home() {
                 <details
                   key={item.q}
                   open={idx === 0}
-                  className="group overflow-hidden border-b border-border py-5 transition-all duration-300 [&::-webkit-details-marker]:hidden"
+                  className="group overflow-hidden border-b border-border py-3 sm:py-5 [&::-webkit-details-marker]:hidden"
                 >
-                  <summary className="font-semibold text-foreground cursor-pointer list-none flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
+                  <summary className="font-semibold text-foreground cursor-pointer list-none flex items-center justify-between gap-3 sm:gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
                     {item.q}
                     <ChevronDown
                       aria-hidden="true"
-                      className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+                      className="h-4 w-4 flex-shrink-0 text-muted-foreground group-open:rotate-180"
                     />
                   </summary>
                   <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
@@ -418,7 +413,7 @@ export default function Home() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-14 sm:py-20 bg-primary">
+        <section className="py-10 sm:py-20 bg-primary">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="font-mono text-xl sm:text-3xl font-semibold tracking-tight text-primary-foreground mb-3 sm:mb-4 text-pretty">
               Get your ATS score now

@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const [totalSuggestionsAvailable, setTotalSuggestionsAvailable] = useState<
     number | undefined
   >(undefined);
-  const [isPaidUser, setIsPaidUser] = useState(false);
+  const [suggestionLimit, setSuggestionLimit] = useState(3);
 
   const [error, setError] = useState("");
 
@@ -144,13 +144,13 @@ export default function DashboardPage() {
         bullet_rewrites,
         tailored_resume,
         total_suggestions_available,
-        is_paid_user,
+        suggestion_limit,
       } = data.data;
       setAnalysis(ats_analysis);
       setBulletRewrites(bullet_rewrites || []);
       setTailoredResume(tailored_resume ?? null);
       setTotalSuggestionsAvailable(total_suggestions_available);
-      setIsPaidUser(Boolean(is_paid_user));
+      setSuggestionLimit(suggestion_limit);
       // create a deep copy for acceptedResume so user accepts don't mutate original tailoredResume
       setAcceptedResume(
         tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                     tailoredResume={tailoredResume}
                     acceptedResume={acceptedResume}
                     totalSuggestionsAvailable={totalSuggestionsAvailable}
-                    isPaidUser={isPaidUser}
+                    suggestionLimit={suggestionLimit}
                     onUpgradeClick={() => setShowBuyModal(true)}
                     onAcceptSuggestion={(
                       bulletIndex: number,

@@ -18,12 +18,17 @@ interface RazorpaySuccessResponse {
 }
 
 const PLANS = [
-  { type: "single" as const, price: 99, credits: 1, label: "1 Scan" },
+  {
+    type: "single" as const,
+    price: 99,
+    credits: 1,
+    label: "1 Scan + 5 Suggested Changes",
+  },
   {
     type: "pack" as const,
     price: 249,
     credits: 5,
-    label: "5 Scans",
+    label: "5 Scans + 8 Suggested Changes",
     popular: true,
   },
 ];
@@ -188,14 +193,16 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
               className="w-full flex justify-between items-center border-2 border-border rounded-lg p-4 hover:border-primary transition-colors disabled:opacity-50 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-sans"
             >
               <div>
-                <div className="font-medium text-foreground">{plan.label}</div>
+                <div className="font-medium text-foreground font-mono">
+                  {plan.label}
+                </div>
                 {plan.popular && (
                   <div className="text-xs font-sans text-primary font-medium">
                     Best value
                   </div>
                 )}
               </div>
-              <div className="font-semibold text-foreground">
+              <div className="font-semibold text-foreground font-mono">
                 {loadingPlan === plan.type ? "Loading..." : `₹${plan.price}`}
               </div>
             </button>

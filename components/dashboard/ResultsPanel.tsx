@@ -22,7 +22,7 @@ interface ResultsPanelProps {
   // if the server truncated the array for a free-tier user.
   totalSuggestionsAvailable?: number;
   // Whether this user has ever purchased credits — unlocks every suggestion.
-  isPaidUser?: boolean;
+  suggestionLimit: number;
   // Opens the buy-credits modal from the "unlock all suggestions" teaser.
   onUpgradeClick?: () => void;
 }
@@ -46,7 +46,7 @@ export function ResultsPanel({
   acceptedResume,
   onAcceptSuggestion,
   totalSuggestionsAvailable,
-  isPaidUser,
+  suggestionLimit,
   onUpgradeClick,
 }: ResultsPanelProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -271,7 +271,7 @@ export function ResultsPanel({
           <SuggestedChanges
             bulletRewrites={bulletRewrites}
             totalSuggestionsAvailable={totalSuggestionsAvailable}
-            isPaidUser={isPaidUser}
+            suggestionLimit={suggestionLimit}
             onUpgradeClick={onUpgradeClick}
             onAccept={(index, selected) =>
               onAcceptSuggestion && onAcceptSuggestion(index, selected)

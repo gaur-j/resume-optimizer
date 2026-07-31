@@ -19,8 +19,8 @@ type Props = {
    */
   totalSuggestionsAvailable?: number;
   /** Whether this user has ever purchased credits — unlocks every suggestion. */
-  isPaidUser?: boolean;
-  /** Opens the buy-credits modal. Required if isPaidUser is false. */
+  suggestionLimit: number;
+  /** Opens the buy-credits modal. */
   onUpgradeClick?: () => void;
 };
 
@@ -29,7 +29,7 @@ export default function SuggestedChanges({
   onAccept,
   onReject,
   totalSuggestionsAvailable,
-  isPaidUser = false,
+  suggestionLimit,
   onUpgradeClick,
 }: Props) {
   const [status, setStatus] = useState<Record<number, Status>>({});
@@ -37,7 +37,9 @@ export default function SuggestedChanges({
 
   const visible = bulletRewrites ?? []; // server already truncated this if free-tier
   const total = totalSuggestionsAvailable ?? visible.length;
-  const lockedCount = Math.max(total - visible.length, 0);
+  // Dynamically calculate locked features based on their specific tier limit
+  const lockedCount = Math.max(total - suggestionLimit, 0);
+  const isFullyUnlocked = suggestionLimit >= total;
 
   const { acceptedCount, rejectedCount, pendingCount } = useMemo(() => {
     let acceptedN = 0;
@@ -106,9 +108,10 @@ export default function SuggestedChanges({
             <h2 className="font-mono text-lg font-semibold text-foreground">
               Suggested Changes
             </h2>
-            {!isPaidUser && (
+            {/* Dynamic Badge rendering */}
+            {!isFullyUnlocked && (
               <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30">
-                Free plan
+                {suggestionLimit <= 3 ? "Free plan" : "Basic Plan"}
               </span>
             )}
           </div>
@@ -255,8 +258,7 @@ export default function SuggestedChanges({
           );
         })}
 
-        {/* Upgrade teaser — only shown to free-tier users with more
-            suggestions waiting behind the limit */}
+        {/* Dynamic Upgrade teaser */}
         {lockedCount > 0 && (
           <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -266,11 +268,11 @@ export default function SuggestedChanges({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {lockedCount} more tailored suggestion
+                    {lockedCount} more premium rewrite
                     {lockedCount > 1 ? "s" : ""} available
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    You're seeing {visible.length} of {total} on the free plan
+                    Upgrade your plan to unlock the remaining AI suggestions.
                   </p>
                 </div>
               </div>
@@ -278,7 +280,7 @@ export default function SuggestedChanges({
                 onClick={onUpgradeClick}
                 className="w-full sm:w-auto flex-shrink-0 bg-primary hover:bg-primary/90"
               >
-                Unlock all suggestions →
+                Upgrade to unlock →
               </Button>
             </div>
           </div>
