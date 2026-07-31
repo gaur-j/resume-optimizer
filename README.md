@@ -208,13 +208,6 @@ Planned pricing features:
 - Resume history
 - Premium export options
 
-### Team / Career Services
-
-- Multi-user access
-- Shared admin view
-- Usage analytics
-- Recruiter and education support
-
 ---
 
 # Roadmap
