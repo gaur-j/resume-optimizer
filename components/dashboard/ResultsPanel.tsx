@@ -70,10 +70,13 @@ export function ResultsPanel({
     circumference - (atsAnalysis.overall_score / 100) * circumference;
 
   return (
-    <div className="space-y-6">
+    <div className="sm:space-y-6 space-y-5">
       {/* Overall Score */}
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-xl tracking-normal font-semibold text-foreground mb-4 font-mono">
+      <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
+        <h2
+          className="text-lg sm:text-xl tracking-tight
+         font-semibold text-foreground mb-4 font-mono"
+        >
           ATS Score
         </h2>
         <div className="flex justify-center mb-4">
@@ -116,13 +119,16 @@ export function ResultsPanel({
         </div>
 
         {/* Section breakdown */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
           {Object.entries(atsAnalysis.sections).map(([key, value]) => (
-            <div key={key} className="bg-secondary rounded-lg p-3">
+            <div
+              key={key}
+              className="bg-secondary/50 rounded-xl p-3 sm:p-4 text-center sm:text-left"
+            >
               <div className="text-xs text-muted-foreground capitalize mb-1">
                 {key}
               </div>
-              <div className={`text-lg font-semibold ${scoreColor(value)}`}>
+              <div className={`text-xl font-semibold ${scoreColor(value)}`}>
                 {value}
               </div>
             </div>
@@ -131,20 +137,20 @@ export function ResultsPanel({
       </div>
 
       {/* Keyword Gap */}
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 font-mono">
+      <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
+        <h2 className="text-lg sm:text-xl tracking-tight font-semibold text-foreground mb-4 font-mono">
           Keyword Match
         </h2>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-5">
           <div>
-            <div className="text-sm font-medium text-approved mb-2 font-sans">
+            <div className="text-sm font-medium text-approved mb-2.5 font-sans">
               ✓ Matched ({atsAnalysis.matched_keywords.length})
             </div>
             <div className="flex flex-wrap gap-2">
               {atsAnalysis.matched_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-approved/10 text-approved border border-approved/30 px-2 py-1 rounded-full"
+                  className="text-xs bg-approved/10 text-approved border border-approved/30 px-2.5 py-1 rounded-full"
                 >
                   {kw}
                 </span>
@@ -152,14 +158,14 @@ export function ResultsPanel({
             </div>
           </div>
           <div>
-            <div className="text-sm font-medium font-sans text-destructive mb-2">
+            <div className="text-sm font-medium font-sans text-destructive mb-2.5">
               ✗ Missing ({atsAnalysis.missing_keywords.length})
             </div>
             <div className="flex flex-wrap gap-2">
               {atsAnalysis.missing_keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-correction/10 text-correction border border-correction/30 px-2 py-1 rounded-full"
+                  className="text-xs bg-correction/10 text-correction border border-correction/30 px-2.5 py-1 rounded-full"
                 >
                   {kw}
                 </span>
@@ -172,19 +178,23 @@ export function ResultsPanel({
       {/* Critical Issues & Quick Wins */}
       {(atsAnalysis.critical_issues.length > 0 ||
         atsAnalysis.quick_wins.length > 0) && (
-        <div className="bg-card rounded-lg border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
+        <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
+          <h2 className="text-lg sm:text-xl tracking-tight font-semibold text-foreground mb-4 font-mono">
             Action Items
           </h2>
           {atsAnalysis.critical_issues.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-5">
               <div className="text-sm font-medium text-destructive mb-2">
                 Critical Issues
               </div>
               <ul className="space-y-1">
                 {atsAnalysis.critical_issues.map((issue, i) => (
-                  <li key={i} className="text-sm text-foreground flex gap-2">
-                    <span className="text-destructive">•</span> {issue}
+                  <li
+                    key={i}
+                    className="text-sm text-foreground flex gap-2 leading-relaxed"
+                  >
+                    <span className="text-destructive flex-shrink-0">•</span>{" "}
+                    {issue}
                   </li>
                 ))}
               </ul>
@@ -195,10 +205,13 @@ export function ResultsPanel({
               <div className="text-sm font-medium text-primary mb-2">
                 Quick Wins
               </div>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {atsAnalysis.quick_wins.map((win, i) => (
-                  <li key={i} className="text-sm text-foreground flex gap-2">
-                    <span className="text-primary">•</span> {win}
+                  <li
+                    key={i}
+                    className="text-sm text-foreground flex gap-2 leading-relaxed"
+                  >
+                    <span className="text-primary flex-shrink-0">•</span> {win}
                   </li>
                 ))}
               </ul>
@@ -208,20 +221,20 @@ export function ResultsPanel({
       )}
 
       {/* Tailored Resume */}
-      <div className="bg-card rounded-lg border border-border p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground font-mono">
+      <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+          <div className="flex-1">
+            <h2 className="text-lg sm:text-xl tracking-tight font-semibold text-foreground font-mono">
               Tailored Resume
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-xl">
               {acceptedResume
                 ? "Showing your accepted edits — the original tailored resume is preserved below."
                 : "Full resume with improved wording and ATS keywords added naturally."}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <ExportResumeButton
               acceptedResume={acceptedResume ?? tailoredResume}
               filename={undefined}
@@ -234,7 +247,7 @@ export function ResultsPanel({
                   ? "Tailored resume copied"
                   : "Copy tailored resume to clipboard"
               }
-              className="text-xs text-primary hover:text-primary/80 whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-2 py-1"
+              className="text-xs font-medium text-primary hover:text-primary/80 whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-3 py-1.5 bg-primary/10 hover:bg-primary/20 transition-colors"
             >
               {copiedResume ? "Copied!" : "Copy all"}
             </button>
@@ -242,15 +255,15 @@ export function ResultsPanel({
         </div>
 
         {tailoredResume.keywords_added.length > 0 && (
-          <div className="mb-4">
-            <div className="text-sm font-medium text-primary mb-2">
+          <div className="mb-5">
+            <div className="text-sm font-medium text-primary mb-2.5 font-sans">
               Keywords added
             </div>
             <div className="flex flex-wrap gap-2">
               {tailoredResume.keywords_added.map((kw, i) => (
                 <span
                   key={i}
-                  className="text-xs bg-primary/10 text-primary border border-primary/30 px-2 py-1 rounded-full"
+                  className="text-xs bg-primary/10 text-primary border border-primary/30 px-2.5 py-1 rounded-full"
                 >
                   {kw}
                 </span>
@@ -259,7 +272,7 @@ export function ResultsPanel({
           </div>
         )}
 
-        <pre className="whitespace-pre-wrap text-sm text-foreground bg-secondary rounded-lg p-4 font-sans leading-relaxed overflow-x-auto">
+        <pre className="whitespace-pre-wrap text-xs sm:text-sm text-foreground bg-secondary/50 rounded-xl p-4 sm:p-5 font-sans leading-relaxed overflow-x-auto border border-border/50">
           {acceptedResume?.full_text ?? tailoredResume.full_text}
         </pre>
       </div>
@@ -267,7 +280,7 @@ export function ResultsPanel({
       {/* Suggested Changes (delegated component) */}
       {(bulletRewrites.length > 0 ||
         (totalSuggestionsAvailable ?? 0) > bulletRewrites.length) && (
-        <div className="bg-card rounded-lg border border-border p-6">
+        <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
           <SuggestedChanges
             bulletRewrites={bulletRewrites}
             totalSuggestionsAvailable={totalSuggestionsAvailable}

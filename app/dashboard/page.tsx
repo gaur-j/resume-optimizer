@@ -165,8 +165,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 rounded-3xl">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 overflow-x-hidden lg:rounded-3xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         {/* Header */}
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
@@ -178,16 +178,25 @@ export default function DashboardPage() {
             Analyze Your Resume
           </h1>
 
-          <p className="mt-3 max-w-3xl text-muted-foreground text-base leading-7">
+          <p className="mt-3 max-w-2xl lg:max-w-3xl text-muted-foreground text-base leading-7 font-sans">
             Upload your resume and match it with a job description to find ATS
             score, missing keywords, and AI-powered improvements.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:gap-10 lg:grid-cols-3">
+        {/* NEW: Mobile Credits View (Visible only on phone/tablet) 
+        <div className="block lg:hidden mb-6">
+          <CreditsCard
+            credits={credits}
+            loading={creditsLoading}
+            onBuyMore={() => setShowBuyModal(true)}
+          />
+        </div>*/}
+
+        <div className="flex flex-col-reverse lg:grid gap-6 lg:gap-10 lg:grid-cols-3">
           {/* Main */}
-          <div className="space-y-6 lg:space-y-8 lg:col-span-2">
-            <div className="max-w-3xl rounded-3xl border border-border bg-card/90 p-4 sm:p-8 shadow-xl">
+          <div className="space-y-6 lg:space-y-8 lg:col-span-2 order-2 lg:order-1">
+            <div className="max-w-3xl lg:rounded-3xl rounded-lg border border-border bg-card/90 p-4 sm:p-8 shadow-xl">
               <form onSubmit={handleAnalyze} className="space-y-6 lg:space-y-8">
                 <div>
                   <label className="mb-3 block font-mono text-xs tracking-wide uppercase text-muted-foreground">
@@ -213,7 +222,7 @@ export default function DashboardPage() {
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the job description here..."
-                    className="min-h-[180px] sm:min-h-[220px] text-base rounded-xl border font-sans bg-background px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
+                    className="min-h-[160px] sm:min-h-[220px] text-base rounded-xl border font-sans bg-background px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
                   />
                 </div>
 
@@ -233,13 +242,13 @@ export default function DashboardPage() {
               </form>
             </div>
 
-            <div ref={resultsRef} className="scroll-mt-24">
+            <div ref={resultsRef} className="scroll-mt-24 mt-8 lg:mt-0">
               {loading && (
                 <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
                   <h2 className="mb-6 font-mono text-xl sm:text-2xl font-semibold text-foreground">
                     Analysis Results
                   </h2>
-                  <p className="mt-2 ml-2 text-xs sm:text-sm text-muted-foreground">
+                  <p className="mt-2 ml-2 text-xs sm:text-sm text-muted-foreground font-sans">
                     ATS score, Keyword analysis, Resume suggestions and Tailored
                     resume.
                   </p>
@@ -249,7 +258,7 @@ export default function DashboardPage() {
               )}
 
               {analysis && tailoredResume && !loading && (
-                <div className="motion-safe:animate-in motion-safe:fade-in rounded-3xl border border-border bg-card p-5 sm:p-8 shadow-xl">
+                <div className="motion-safe:animate-in motion-safe:fade-in lg:rounded-3xl rounded-lg border border-border bg-card p-5 sm:p-8 shadow-xl">
                   <ResultsPanel
                     atsAnalysis={analysis}
                     bulletRewrites={bulletRewrites}
@@ -301,50 +310,55 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 rounded-3xl text-pretty">
-            <CreditsCard
-              credits={credits}
-              loading={creditsLoading}
-              onBuyMore={() => setShowBuyModal(true)}
-            />
+          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 rounded-3xl text-pretty order-1 lg:order-2">
+            {/* NEW: Hide this version on mobile, show on desktop */}
+            <div className="lg:block">
+              <CreditsCard
+                credits={credits}
+                loading={creditsLoading}
+                onBuyMore={() => setShowBuyModal(true)}
+              />
+            </div>
 
-            <div className="rounded-3xl border border-border bg-secondary p-6 shadow-xl">
-              <h3 className="mb-4 font-mono text-lg sm:text-xl font-semibold text-foreground">
-                💡 Quick Tips
-              </h3>
+            <div className="block">
+              <div className="lg:rounded-3xl rounded-xl border border-border bg-secondary p-6 shadow-xl">
+                <h3 className="mb-4 font-mono text-lg sm:text-xl font-semibold text-foreground">
+                  💡 Quick Tips
+                </h3>
 
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                    <span>Match keywords from the job description.</span>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                    <span>Add measurable achievements.</span>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                    <span>Use action verbs like Built, Led, Designed.</span>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                    <span>Keep formatting ATS-friendly.</span>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                    <span>Tailor every resume to the job.</span>
-                  </div>
-                </li>
-              </ul>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                      <span>Match keywords from the job description.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                      <span>Add measurable achievements.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                      <span>Use action verbs like Built, Led, Designed.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                      <span>Keep formatting ATS-friendly.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
+                      <span>Tailor every resume to the job.</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

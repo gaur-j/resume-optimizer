@@ -178,10 +178,10 @@ export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
                 className="h-6 w-6 text-muted-foreground"
                 aria-hidden="true"
               />
-              <p className="text-sm text-foreground font-medium">
+              <p className="text-sm text-foreground font-medium font-sans">
                 Drop your resume PDF here, or click to browse
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground font-sans">
                 PDF only, up to 5MB
               </p>
             </div>
