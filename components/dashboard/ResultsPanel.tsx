@@ -70,7 +70,7 @@ export function ResultsPanel({
     circumference - (atsAnalysis.overall_score / 100) * circumference;
 
   return (
-    <div className="sm:space-y-6 space-y-5">
+    <div className="sm:space-y-6 space-y-4">
       {/* Overall Score */}
       <div className="bg-card rounded-2xl border border-border p-5 sm:p-6">
         <h2

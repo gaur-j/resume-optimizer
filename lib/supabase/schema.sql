@@ -161,3 +161,136 @@ DROP TRIGGER IF EXISTS set_payments_updated_at ON payments;
 CREATE TRIGGER set_payments_updated_at
   BEFORE UPDATE ON payments
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- ============================================================
+-- Atomic credit operations (prevents race conditions)
+-- ============================================================
+-- Consuming and refunding scan_credits must never be a read-then-write
+-- from application code — two concurrent requests could both read the
+-- same balance and both proceed. These functions perform the guard and
+-- the update in a single UPDATE statement, which Postgres serializes at
+-- the row level, so only one concurrent caller can ever succeed once
+-- credits are down to their last unit.
+--
+-- These run under the CALLER's own session (not the service-role admin
+-- client), relying on the existing "users_update_own" RLS policy above —
+-- that's why each function also pins p_user_id = auth.uid() as a second,
+-- explicit guard. This is intentionally different from the payment-
+-- crediting path in lib/payments.ts, which legitimately needs the
+-- service-role client because it runs from a webhook with no user session.
+
+CREATE OR REPLACE FUNCTION public.consume_scan_credit(p_user_id UUID)
+RETURNS TABLE (success BOOLEAN, remaining_credits INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_remaining INT;
+BEGIN
+  UPDATE users
+  SET scan_credits = scan_credits - 1,
+      updated_at = NOW()
+  WHERE id = p_user_id
+    AND id = auth.uid()      -- never let a caller spend someone else's credit
+    AND scan_credits > 0
+  RETURNING scan_credits INTO v_remaining;
+
+  IF v_remaining IS NULL THEN
+    RETURN QUERY
+      SELECT FALSE, COALESCE((SELECT scan_credits FROM users WHERE id = p_user_id), 0);
+  ELSE
+    RETURN QUERY SELECT TRUE, v_remaining;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.consume_scan_credit(UUID) TO authenticated;
+
+-- Refunds one credit — used when a scan is consumed atomically up front
+-- but the AI pipeline or DB write fails afterward, so the user isn't
+-- charged for a scan they never actually received.
+CREATE OR REPLACE FUNCTION public.refund_scan_credit(p_user_id UUID)
+RETURNS INT
+LANGUAGE sql
+AS $$
+  UPDATE users
+  SET scan_credits = scan_credits + 1,
+      updated_at = NOW()
+  WHERE id = p_user_id
+    AND id = auth.uid()
+  RETURNING scan_credits;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.refund_scan_credit(UUID) TO authenticated;
+
+-- ============================================================
+-- Rate limiting (generic table + function, reusable by any route)
+-- ============================================================
+-- Fixed-window counter per (user, action). Uses the same atomic-RPC
+-- pattern as consume_scan_credit: the check and the increment happen in
+-- one INSERT ... ON CONFLICT statement, so concurrent requests can't
+-- both read "under the limit" and both slip through.
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action TEXT NOT NULL,
+  window_start TIMESTAMPTZ NOT NULL,
+  request_count INT NOT NULL DEFAULT 0,
+  UNIQUE (user_id, action, window_start)
+);
+
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "rate_limits_all_own" ON rate_limits;
+CREATE POLICY "rate_limits_all_own" ON rate_limits
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS rate_limits_lookup_idx
+  ON rate_limits(user_id, action, window_start);
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  p_user_id UUID,
+  p_action TEXT,
+  p_max_requests INT,
+  p_window_seconds INT
+) RETURNS TABLE (allowed BOOLEAN, retry_after_seconds INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_window_start TIMESTAMPTZ;
+  v_count INT;
+BEGIN
+  IF p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Cannot check rate limit for another user';
+  END IF;
+
+  -- Bucket "now" into fixed windows of p_window_seconds — e.g. with a
+  -- 60s window, 14:32:07 and 14:32:53 land in the same bucket (14:32:00).
+  v_window_start := to_timestamp(
+    floor(extract(epoch FROM NOW()) / p_window_seconds) * p_window_seconds
+  );
+
+  INSERT INTO rate_limits (user_id, action, window_start, request_count)
+  VALUES (p_user_id, p_action, v_window_start, 1)
+  ON CONFLICT (user_id, action, window_start)
+  DO UPDATE SET request_count = rate_limits.request_count + 1
+  RETURNING request_count INTO v_count;
+
+  IF v_count > p_max_requests THEN
+    RETURN QUERY SELECT
+      FALSE,
+      GREATEST(
+        0,
+        p_window_seconds - floor(extract(epoch FROM NOW() - v_window_start))::INT
+      );
+  ELSE
+    RETURN QUERY SELECT TRUE, 0;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(UUID, TEXT, INT, INT) TO authenticated;
+
+-- Housekeeping (optional): old buckets accumulate harmlessly since they're
+-- tiny rows, but you can prune them periodically, e.g. via a daily cron:
+--   DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '2 days';
