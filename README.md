@@ -48,17 +48,9 @@ Resume Optimizer helps job seekers quickly transform one resume into multiple ro
   <img alt="Home screenshot" src="./public/screenshots/home-light.png">
 </picture>
 
-### Upload Page
-
-![Upload Page](./public/screenshots/upload-page.png)
-
 ### Upload Resume
 
 ![Resume Upload](./public/screenshots/resume-upload.png)
-
-### Job Description
-
-![Job Description](./public/screenshots/job-description.png)
 
 ### Optimized Result
 
