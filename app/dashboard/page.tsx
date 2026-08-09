@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { CreditsCard } from "@/components/dashboard/CreditsCard";
 import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
-import { ResultsPanelSkeleton } from "@/components/dashboard/DashboardSkeletons";
+import { AnalysisProgress } from "@/components/dashboard/AnalysisProgress";
 import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
 import type {
@@ -243,19 +243,7 @@ export default function DashboardPage() {
             </div>
 
             <div ref={resultsRef} className="scroll-mt-24 mt-8 lg:mt-0">
-              {loading && (
-                <div className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-8 shadow-xl">
-                  <h2 className="mb-6 font-mono text-xl sm:text-2xl font-semibold text-foreground">
-                    Analysis Results
-                  </h2>
-                  <p className="mt-2 ml-2 text-xs sm:text-sm text-muted-foreground font-sans">
-                    ATS score, Keyword analysis, Resume suggestions and Tailored
-                    resume.
-                  </p>
-
-                  <ResultsPanelSkeleton />
-                </div>
-              )}
+              {loading && <AnalysisProgress />}
 
               {analysis && tailoredResume && !loading && (
                 <div className="motion-safe:animate-in motion-safe:fade-in lg:rounded-3xl rounded-lg border border-border bg-card p-5 sm:p-8 shadow-xl">

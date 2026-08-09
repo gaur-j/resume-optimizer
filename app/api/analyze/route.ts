@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
     }
 
     // --- RATE LIMITING ---
-    // Checked before we ever touch credits or the AI pipeline, so a
-    // blocked request costs nothing and doesn't consume a credit.
     const rateLimitFailure = await checkRateLimits(
       supabase,
       user.id,
@@ -89,15 +87,26 @@ export async function POST(request: NextRequest) {
     const suggestionLimit = getSuggestionLimit(totalPaid);
 
     try {
-      // 1. Analyze ATS
-      const atsAnalysis = await analyzeATS(resume_text, jd_text);
-
-      // 2. Generate ALL Premium Bullet Rewrites
+      // --- PARALLELIZED: steps 1 and 2 don't depend on each other ---
+      // analyzeATS() scores the resume against the JD. rewriteBullets()
+      // only needs the extracted bullets + JD text — it never reads
+      // atsAnalysis. Running them concurrently removes one full AI
+      // round-trip from the user's wait time. tailorResume() genuinely
+      // depends on atsAnalysis's keyword lists, so it still runs after.
       const bullets = extractBullets(resume_text);
-      const allBulletRewrites =
-        bullets.length > 0 ? await rewriteBullets(bullets, jd_text) : [];
+
+      const [atsAnalysis, allBulletRewrites] = await Promise.all([
+        analyzeATS(resume_text, jd_text),
+        bullets.length > 0
+          ? rewriteBullets(bullets, jd_text)
+          : Promise.resolve([]),
+      ]);
 
       // 3. Generate Tailored Resume (LOOPHOLE CLOSED)
+      // By passing an empty array `[]` for bulletRewrites, the AI will
+      // ONLY do basic keyword insertion on the tailored resume. The
+      // premium rewrites are forced to stay inside the "Suggested
+      // Changes" panel!
       const tailoredResume = await tailorResume(resume_text, jd_text, {
         matchedKeywords: atsAnalysis.matched_keywords,
         missingKeywords: atsAnalysis.missing_keywords,
