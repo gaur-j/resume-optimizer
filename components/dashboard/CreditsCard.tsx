@@ -10,18 +10,18 @@ interface CreditsCardProps {
 
 export function CreditsCard({ credits, loading, onBuyMore }: CreditsCardProps) {
   return (
-    <div className="bg-secondary rounded-lg border border-border p-6 shadow-xl">
-      <h2 className="text-lg font-semibold font-mono text-foreground mb-4">
-        Your Credits
+    <div className="bg-secondary/80 lg:rounded-xl rounded-lg border border-border lg:p-6 p-4 shadow-xl">
+      <h2 className="text-lg font-semibold font-mono text-foreground mb-4 text-center">
+        Remaining Credits
       </h2>
       <div className="text-center">
         {loading ? (
-          <div className="text-4xl font-bold text-muted-foreground mb-2 animate-pulse">
+          <div className="lg:text-4xl text-xl font-bold text-muted-foreground mb-2 animate-pulse">
             —
           </div>
         ) : (
           <div
-            className={`text-4xl font-bold mb-2 font-sans ${
+            className={`lg:text-4xl text-xl font-bold mb-2 font-sans ${
               credits === 0 ? "text-correction" : "text-approved"
             }`}
           >

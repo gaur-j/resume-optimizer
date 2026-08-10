@@ -193,7 +193,7 @@ export default function DashboardPage() {
           />
         </div>*/}
 
-        <div className="flex flex-col-reverse lg:grid gap-6 lg:gap-10 lg:grid-cols-3">
+        <div className="flex flex-col lg:grid gap-6 lg:gap-10 lg:grid-cols-3">
           {/* Main */}
           <div className="space-y-6 lg:space-y-8 lg:col-span-2 order-2 lg:order-1">
             <div className="max-w-3xl lg:rounded-3xl rounded-lg border border-border bg-card/90 p-4 sm:p-8 shadow-xl">
@@ -298,7 +298,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 rounded-3xl text-pretty order-1 lg:order-2">
+          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 lg:rounded-3xl rounded-xl text-pretty order-1 lg:order-2">
             {/* NEW: Hide this version on mobile, show on desktop */}
             <div className="lg:block">
               <CreditsCard
