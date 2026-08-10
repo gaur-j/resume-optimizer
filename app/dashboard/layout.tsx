@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
+import { AccountMenu } from "@/components/sidebar/account-menu";
 
 export default async function DashboardLayout({
   children,
@@ -36,19 +37,19 @@ export default async function DashboardLayout({
           {/* Right Side */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Hide email on very small screens */}
-            <Avatar className="h-8 w-8 md:hidden">
-              <AvatarFallback className="text-muted-foreground bg-card text-xl font-sans shadow-xl">
-                {user.email?.[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span
-              className="hidden md:block text-sm text-muted-foreground truncate max-w-[200px]"
-              title={user.email ?? undefined}
-            >
-              {user.email}
-            </span>
+            <AccountMenu
+              user={{
+                name:
+                  user.user_metadata?.full_name ||
+                  user.user_metadata?.name ||
+                  "User",
+                email: user.email || "",
+                avatarUrl: user.user_metadata?.avatar_url,
+              }}
+            />
 
             <ThemeToggle />
+            <AppSidebar />
 
             <form action="/auth/logout" method="POST">
               <Button variant="outline" size="sm" type="submit">

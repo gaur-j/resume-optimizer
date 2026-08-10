@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/Theme/theme-provider";
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
+import { MobileSidebar } from "@/components/sidebar/mobile-sidebar";
+import { SidebarProvider } from "@/components/sidebar/sidebar-provider";
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -130,8 +133,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          {/* Add the Toaster component right above the closing body tag */}
+          <SidebarProvider>
+            <div className="flex min-h-screen">
+              <AppSidebar />
+              <div className="flex min-w-0 flex-1 flex-col">
+                {/* Your top bar — MobileSidebar renders its own trigger button */}
+                <header className="flex h-14 items-center gap-3 border-b border-border/60 px-4 md:hidden">
+                  <MobileSidebar />
+                  <span className="text-sm font-semibold">ResumeOptimizer</span>
+                </header>
+                <main className="flex-1">{children}</main>
+              </div>
+            </div>
+          </SidebarProvider>
           <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
