@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { navItems } from "./nav-items";
 import { NavLink } from "./nav-link";
-import { AccountMenu } from "./account-menu";
 import { SidebarProvider } from "./sidebar-provider";
 
 export function MobileSidebar() {
@@ -17,11 +16,9 @@ export function MobileSidebar() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Open menu</span>
-        </Button>
+      <SheetTrigger type="button" className="ghost icon md:hidden">
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Open menu</span>
       </SheetTrigger>
 
       <SheetContent
@@ -34,7 +31,7 @@ export function MobileSidebar() {
           collapsed/icon-only mode doesn't make sense once it's a drawer.
         */}
         <SidebarProvider>
-          <TooltipProvider delayDuration={0}>
+          <TooltipProvider delay={0}>
             <div className="flex h-full flex-col">
               <div className="flex h-14 items-center gap-2 px-4">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
@@ -57,12 +54,6 @@ export function MobileSidebar() {
                   ))}
                 </nav>
               </ScrollArea>
-
-              <Separator className="bg-border/60" />
-
-              <div className="p-3">
-                <AccountMenu />
-              </div>
             </div>
           </TooltipProvider>
         </SidebarProvider>

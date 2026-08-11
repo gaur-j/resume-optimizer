@@ -102,19 +102,78 @@ export function AccountMenu({ user, onNavigate, onSignOut }: AccountMenuProps) {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => onNavigate?.("account-settings")}>
+          <DropdownMenuItem disabled>
             <Settings className="h-4 w-4" />
             Account Settings
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Soon
+            </span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onNavigate?.("password-security")}>
+          <DropdownMenuItem disabled>
             <ShieldCheck className="h-4 w-4" />
             Password &amp; Security
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Soon
+            </span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onNavigate?.("history")}>
+          <DropdownMenuItem disabled>
             <History className="h-4 w-4" />
             History
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Soon
+            </span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Palette className="h-4 w-4" />
+            Theme
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+              <DropdownMenuRadioItem value="light">
+                <Sun className="h-4 w-4" />
+                Light
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                <Moon className="h-4 w-4" />
+                Dark
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                <Monitor className="h-4 w-4" />
+                System
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuItem disabled>
+          <Lock className="h-4 w-4" />
+          Privacy
+          <span className="ml-auto text-[10px] text-muted-foreground">
+            Soon
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled>
+          <MessageCircleQuestion className="h-4 w-4" />
+          Feedback &amp; Help
+          <span className="ml-auto text-[10px] text-muted-foreground">
+            Soon
+          </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={onSignOut}
+          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 

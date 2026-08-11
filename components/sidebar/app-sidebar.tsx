@@ -9,13 +9,12 @@ import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-provider";
 import { navItems } from "./nav-items";
 import { NavLink } from "./nav-link";
-import { AccountMenu } from "./account-menu";
 
 export function AppSidebar() {
   const { collapsed, toggle } = useSidebar();
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delay={0}>
       <aside
         className={cn(
           "relative hidden h-screen shrink-0 flex-col bg-card md:flex",

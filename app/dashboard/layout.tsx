@@ -1,10 +1,11 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import { AccountMenu } from "@/components/sidebar/account-menu";
+import { MobileSidebar } from "@/components/sidebar/mobile-sidebar";
+import { DashboardHeaderActions } from "@/components/sidebar/dashboard-header-actions";
+import { SidebarProvider } from "@/components/sidebar/sidebar-provider";
 
 export default async function DashboardLayout({
   children,
@@ -21,51 +22,52 @@ export default async function DashboardLayout({
     redirect("/auth/login");
   }
 
+  const accountUser = {
+    name: user.user_metadata?.full_name || user.user_metadata?.name || "User",
+    email: user.email || "",
+    avatarUrl: user.user_metadata?.avatar_url as string | undefined,
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-secondary">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <Link
-            href="/dashboard"
-            className="text-xl sm:text-2xl font-bold text-foreground"
-          >
-            Resume<span className="text-primary">AI</span>
-          </Link>
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-secondary">
+        {/* Desktop sidebar — scoped to /dashboard only, never rendered on
+            marketing, auth, or legal pages. */}
+        <AppSidebar />
 
-          {/* Right Side */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Hide email on very small screens */}
-            <AccountMenu
-              user={{
-                name:
-                  user.user_metadata?.full_name ||
-                  user.user_metadata?.name ||
-                  "User",
-                email: user.email || "",
-                avatarUrl: user.user_metadata?.avatar_url,
-              }}
-            />
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Header */}
+          <header className="sticky top-0 z-50 border-b border-border bg-card">
+            <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center gap-2">
+                {/* Hamburger — mobile only; desktop sidebar has its own
+                    collapse toggle built in. */}
+                <MobileSidebar />
 
-            <ThemeToggle />
-            <AppSidebar />
+                <Link
+                  href="/dashboard"
+                  className="text-xl sm:text-2xl font-bold text-foreground"
+                >
+                  Resume<span className="text-primary">AI</span>
+                </Link>
+              </div>
 
-            <form action="/auth/logout" method="POST">
-              <Button variant="outline" size="sm" type="submit">
-                Logout
-              </Button>
-            </form>
-          </div>
+              {/* Right side */}
+              <div className="flex items-center gap-2 sm:gap-4">
+                <ThemeToggle />
+                <DashboardHeaderActions user={accountUser} />
+              </div>
+            </div>
+          </header>
+
+          {/* Page Content */}
+          <main className="flex-1">
+            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+              {children}
+            </div>
+          </main>
         </div>
-      </header>
-
-      {/* Page Content */}
-      <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {children}
-        </div>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }

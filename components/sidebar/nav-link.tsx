@@ -44,7 +44,9 @@ export function NavLink({ item }: { item: NavItem }) {
         className={cn(
           "h-[18px] w-[18px] shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none",
           "group-hover:scale-[1.08]",
-          active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+          active
+            ? "text-primary"
+            : "text-muted-foreground group-hover:text-foreground"
         )}
         strokeWidth={2}
       />
@@ -62,11 +64,13 @@ export function NavLink({ item }: { item: NavItem }) {
   if (!collapsed) return link;
 
   return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
+    <Tooltip>
+      <TooltipTrigger>{link}</TooltipTrigger>
       <TooltipContent side="right" sideOffset={12} className="font-medium">
         {item.title}
-        {item.badge && <span className="ml-1.5 text-primary">· {item.badge}</span>}
+        {item.badge && (
+          <span className="ml-1.5 text-primary">· {item.badge}</span>
+        )}
       </TooltipContent>
     </Tooltip>
   );
