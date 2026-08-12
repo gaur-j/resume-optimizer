@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { MobileSidebar } from "@/components/sidebar/mobile-sidebar";
-import { DashboardHeaderActions } from "@/components/sidebar/dashboard-header-actions";
 import { SidebarProvider } from "@/components/sidebar/sidebar-provider";
 
 export default async function DashboardLayout({
@@ -31,31 +30,33 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-secondary">
-        {/* Desktop sidebar — scoped to /dashboard only, never rendered on
-            marketing, auth, or legal pages. */}
-        <AppSidebar />
+        {/* Desktop sidebar — owns its own account menu + sign-out now,
+            pinned to the bottom of the rail. */}
+        <AppSidebar user={accountUser} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Header */}
           <header className="sticky top-0 z-50 border-b border-border bg-card">
             <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-2">
-                {/* Hamburger — mobile only; desktop sidebar has its own
-                    collapse toggle built in. */}
-                <MobileSidebar />
+                {/* Hamburger + drawer — mobile only. Carries its own
+                    account menu + sign-out, so mobile never needs any
+                    extra header chrome. */}
+                <MobileSidebar user={accountUser} />
 
+                {/* Brand — mobile only. On desktop, AppSidebar already
+                    shows this in its own header row, so repeating it
+                    here would just be clutter. */}
                 <Link
                   href="/dashboard"
-                  className="text-xl sm:text-2xl font-bold text-foreground"
+                  className="text-xl font-bold text-foreground md:hidden"
                 >
                   Resume<span className="text-primary">AI</span>
                 </Link>
               </div>
 
-              {/* Right side */}
               <div className="flex items-center gap-2 sm:gap-4">
                 <ThemeToggle />
-                <DashboardHeaderActions user={accountUser} />
               </div>
             </div>
           </header>

@@ -9,15 +9,22 @@ import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-provider";
 import { navItems } from "./nav-items";
 import { NavLink } from "./nav-link";
+import { SidebarFooter } from "./sidebar-footer";
 
-export function AppSidebar() {
+type AccountUser = {
+  name: string;
+  email: string;
+  avatarUrl?: string;
+};
+
+export function AppSidebar({ user }: { user: AccountUser }) {
   const { collapsed, toggle } = useSidebar();
 
   return (
     <TooltipProvider delay={0}>
       <aside
         className={cn(
-          "relative hidden h-screen shrink-0 flex-col bg-card md:flex",
+          "relative hidden h-screen shrink-0 flex-col bg-card shadow-sm md:flex",
           "border-r border-border/60",
           "transition-[width] duration-300 ease-in-out motion-reduce:transition-none",
           collapsed ? "w-[68px]" : "w-[248px]"
@@ -34,8 +41,8 @@ export function AppSidebar() {
             <Sparkles className="h-4 w-4" strokeWidth={2.25} />
           </div>
           {!collapsed && (
-            <span className="truncate text-sm font-semibold tracking-tight">
-              ResumeOptimizer
+            <span className="text-xl font-bold text-foreground md:hidden">
+              Resume<span className="text-primary">AI</span>
             </span>
           )}
         </div>
@@ -51,7 +58,8 @@ export function AppSidebar() {
           </nav>
         </ScrollArea>
 
-        <Separator className="bg-border/60" />
+        {/* Account switcher, pinned to the bottom of the rail */}
+        <SidebarFooter user={user} />
 
         {/* Floating collapse/expand toggle */}
         <Button

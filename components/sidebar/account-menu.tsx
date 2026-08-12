@@ -16,6 +16,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSidebar } from "./sidebar-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -40,11 +45,21 @@ type AccountUser = {
 
 type AccountMenuProps = {
   user: AccountUser;
-  onNavigate?: (destination: string) => void;
   onSignOut?: () => void;
 };
 
-export function AccountMenu({ user, onNavigate, onSignOut }: AccountMenuProps) {
+// data-popup-open is Base UI's own convention for "this trigger's popup is
+// currently open" — confirmed against DropdownMenuSubTrigger's styling in
+// components/ui/dropdown-menu.tsx, not guessed.
+const triggerClass = cn(
+  "flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2 py-2",
+  "transition-colors duration-200 ease-out motion-reduce:transition-none",
+  "hover:bg-accent/70 hover:border-border/60",
+  "data-popup-open:bg-accent/70 data-popup-open:border-border/60",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+);
+
+export function AccountMenu({ user, onSignOut }: AccountMenuProps) {
   const { collapsed } = useSidebar();
   const { theme, setTheme } = useTheme();
 
@@ -56,33 +71,49 @@ export function AccountMenu({ user, onNavigate, onSignOut }: AccountMenuProps) {
     .join("")
     .toUpperCase();
 
+  const triggerButton = (
+    <DropdownMenuTrigger
+      className={cn(triggerClass, collapsed && "justify-center px-0")}
+    >
+      <Avatar className="h-8 w-8 shrink-0 border border-border/60">
+        <AvatarImage src={user.avatarUrl} alt={user.name} />
+        <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+
+      {!collapsed && (
+        <>
+          <span className="flex min-w-0 flex-1 flex-col items-start text-left">
+            <span className="w-full truncate text-sm font-medium leading-tight">
+              {user.name}
+            </span>
+            <span className="w-full truncate text-xs leading-tight text-muted-foreground">
+              {user.email}
+            </span>
+          </span>
+          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        </>
+      )}
+    </DropdownMenuTrigger>
+  );
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        type="button"
-        className="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2 py-2"
-      >
-        <Avatar className="h-8 w-8 shrink-0 border border-border/60">
-          <AvatarImage src={user.avatarUrl} alt={user.name} />
-          <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-
-        {!collapsed && (
-          <>
-            <span className="flex min-w-0 flex-1 flex-col items-start text-left">
-              <span className="w-full truncate text-sm font-medium leading-tight">
-                {user.name}
-              </span>
-              <span className="w-full truncate text-xs leading-tight text-muted-foreground">
-                {user.email}
-              </span>
-            </span>
-            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          </>
-        )}
-      </DropdownMenuTrigger>
+      {/* Collapsed rail: wrap the trigger in a tooltip via the `render`
+          prop (Base UI's composition pattern) so it merges onto the SAME
+          button as the dropdown trigger, instead of nesting two separate
+          interactive elements. */}
+      {collapsed ? (
+        <Tooltip>
+          <TooltipTrigger render={triggerButton} />
+          <TooltipContent side="right" sideOffset={12} className="font-medium">
+            {user.name}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        triggerButton
+      )}
 
       <DropdownMenuContent
         side={collapsed ? "right" : "top"}
@@ -163,50 +194,6 @@ export function AccountMenu({ user, onNavigate, onSignOut }: AccountMenuProps) {
           <span className="ml-auto text-[10px] text-muted-foreground">
             Soon
           </span>
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem
-          onClick={onSignOut}
-          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Palette className="h-4 w-4" />
-            Theme
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-              <DropdownMenuRadioItem value="light">
-                <Sun className="h-4 w-4" />
-                Light
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                <Moon className="h-4 w-4" />
-                Dark
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                <Monitor className="h-4 w-4" />
-                System
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        <DropdownMenuItem onClick={() => onNavigate?.("privacy")}>
-          <Lock className="h-4 w-4" />
-          Privacy
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onNavigate?.("feedback")}>
-          <MessageCircleQuestion className="h-4 w-4" />
-          Feedback &amp; Help
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
