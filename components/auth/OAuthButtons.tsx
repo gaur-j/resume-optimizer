@@ -60,11 +60,11 @@ interface OAuthButtonsProps {
 
 export function OAuthButtons({ onError }: OAuthButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+
   const supabase = createClient();
 
   async function handleOAuth(provider: Provider) {
     setLoadingProvider(provider);
-    onError("");
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -77,8 +77,6 @@ export function OAuthButtons({ onError }: OAuthButtonsProps) {
       onError(error.message);
       setLoadingProvider(null);
     }
-    // On success, the browser navigates away to the provider — nothing
-    // more to do here.
   }
 
   return (

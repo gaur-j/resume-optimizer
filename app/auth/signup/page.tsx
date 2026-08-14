@@ -86,7 +86,11 @@ export default function SignupPage() {
         </div>
       )}
 
-      <OAuthButtons onError={(err) => toast.error(err)} />
+      <OAuthButtons
+        onError={(err) => {
+          if (err) toast.error(err);
+        }}
+      />
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
