@@ -33,11 +33,19 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-secondary">
+      {/* CHANGED: min-h-screen -> h-screen overflow-hidden. This turns the
+          whole dashboard into a fixed-height app shell so the DOCUMENT
+          itself never scrolls — that's what was letting the sidebar
+          scroll away with the rest of the page. */}
+      <div className="flex h-screen overflow-hidden bg-secondary">
         {/* Desktop Sidebar */}
         <AppSidebar user={accountUser} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* CHANGED: added overflow-y-auto. This column (header + main)
+            is now its own independent scroll container — everything
+            inside it scrolls without moving the sidebar, which sits
+            outside this container entirely. */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           {/* Header */}
           <header className="sticky top-0 z-40 border-b border-border bg-card">
             <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
