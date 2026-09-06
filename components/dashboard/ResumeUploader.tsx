@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { CheckCircle2, FileText } from "lucide-react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from "react";
+import {
+  CheckCircle2,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface ResumeUploaderProps {
@@ -9,194 +22,525 @@ interface ResumeUploaderProps {
   disabled?: boolean;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB, matches the server-side limit
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_FILE_TYPE = "application/pdf";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-export function ResumeUploader({ onExtracted, disabled }: ResumeUploaderProps) {
+export function ResumeUploader({
+  onExtracted,
+  disabled = false,
+}: ResumeUploaderProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${Math.round(bytes / 1024)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const validateFile = (file: File): string | null => {
-    if (file.type !== "application/pdf") {
-      return "Please upload a PDF file.";
+    if (file.type !== ACCEPTED_FILE_TYPE) {
+      return "Only PDF files are supported.";
     }
+
     if (file.size > MAX_FILE_SIZE) {
-      return "File is too large. Please upload a PDF under 5MB.";
+      return "Your resume is too large. Please upload a PDF under 5 MB.";
     }
+
+    if (file.size === 0) {
+      return "This file appears to be empty. Please choose another PDF.";
+    }
+
     return null;
   };
 
+  const resetUploader = useCallback(() => {
+    if (disabled) return;
+
+    setStatus("idle");
+    setFileName("");
+    setFileSize(null);
+    setError("");
+    setIsDragging(false);
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  }, [disabled]);
+
   const handleFile = useCallback(
     async (file: File) => {
+      if (disabled) return;
+
       const validationError = validateFile(file);
 
       if (validationError) {
-        setError(validationError);
         setStatus("error");
+        setFileName(file.name);
+        setFileSize(file.size);
+        setError(validationError);
+
         toast.error(validationError);
         return;
       }
 
       setFileName(file.name);
+      setFileSize(file.size);
       setStatus("uploading");
       setError("");
+      setIsDragging(false);
 
       try {
-        await toast.promise(
-          (async () => {
-            const formData = new FormData();
-            formData.append("file", file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-            const response = await fetch("/api/extract-pdf", {
-              method: "POST",
-              body: formData,
-            });
+        const response = await fetch("/api/extract-pdf", {
+          method: "POST",
+          body: formData,
+        });
 
-            const data = await response.json();
+        let data: {
+          data?: {
+            text?: string;
+          };
+          error?: string;
+        };
 
-            if (!response.ok) {
-              throw new Error(data.error || "Failed to read that PDF.");
-            }
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(
+            "The server returned an invalid response. Please try again."
+          );
+        }
 
-            onExtracted(data.data.text);
-            setStatus("success");
+        if (!response.ok) {
+          throw new Error(
+            data.error || "We couldn't read this PDF. Please try again."
+          );
+        }
 
-            return data;
-          })(),
-          {
-            loading: `Reading ${file.name}...`,
-            success: "Resume uploaded successfully.",
-            error: (err) =>
-              err instanceof Error
-                ? err.message
-                : "Something went wrong. Please try again.",
-          }
-        );
+        const extractedText = data.data?.text?.trim();
+
+        if (!extractedText) {
+          throw new Error(
+            "We couldn't extract any readable text from this PDF. Please upload a text-based resume."
+          );
+        }
+
+        onExtracted(extractedText);
+        setStatus("success");
+        setError("");
+
+        toast.success("Resume uploaded successfully.");
       } catch (err) {
-        console.error(err);
+        console.error("Resume upload failed:", err);
 
         const message =
           err instanceof Error
             ? err.message
-            : "Something went wrong. Please try again.";
+            : "Something went wrong while reading your resume.";
 
-        setError(message);
         setStatus("error");
+        setError(message);
+
+        toast.error(message);
       }
     },
-    [onExtracted]
+    [disabled, onExtracted]
   );
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setIsDragging(false);
-    if (disabled) return;
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  }
+  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
 
-  function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-    // reset so selecting the same file again still fires onChange
-    e.target.value = "";
-  }
+    if (file) {
+      void handleFile(file);
+    }
+
+    // Allow selecting the same file again.
+    event.target.value = "";
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    if (disabled) return;
+
+    setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0];
+
+    if (!file) return;
+
+    void handleFile(file);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    if (!disabled) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    // Prevent flickering when moving between children.
+    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+      return;
+    }
+
+    setIsDragging(false);
+  };
+
+  const openFilePicker = () => {
+    if (disabled || status === "uploading") return;
+
+    inputRef.current?.click();
+  };
+
+  const isBusy = status === "uploading";
 
   return (
-    <div>
-      <div
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-disabled={disabled}
-        aria-label="Upload resume PDF, up to 5 megabytes"
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (!disabled) setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        onClick={() => !disabled && inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
-        className={`
-          rounded-xl border-2 border-dashed p-8 text-center transition-all
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-          ${
-            isDragging
-              ? "border-primary bg-primary/10 shadow-sm"
-              : "border-border hover:border-primary/50 hover:bg-muted/40"
-          }
-          ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
-        `}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileInputChange}
-          disabled={disabled}
-          className="hidden"
-          tabIndex={-1}
-          aria-hidden="true"
-        />
+    <div className="w-full">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_FILE_TYPE}
+        onChange={handleFileInputChange}
+        disabled={disabled || isBusy}
+        className="sr-only"
+        aria-label="Upload resume PDF"
+      />
 
-        <div aria-live="polite">
-          {status === "uploading" && (
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
-              <p className="text-sm text-muted-foreground">
-                Reading {fileName}...
-              </p>
-            </div>
-          )}
-
-          {status === "success" && (
-            <div className="flex flex-col items-center gap-1">
+      {status === "success" ? (
+        <div
+          className="
+            rounded-2xl
+            border
+            border-success/30
+            bg-success/5
+            p-4
+            sm:p-5
+          "
+        >
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-success/10
+              "
+            >
               <CheckCircle2
-                className="h-6 w-6 text-green-600"
+                className="h-5 w-5 text-success"
                 aria-hidden="true"
               />
-              <p className="text-sm text-foreground font-medium">{fileName}</p>
-              <p className="text-xs text-muted-foreground">
-                Resume uploaded — review it below and edit if needed
-              </p>
             </div>
-          )}
 
-          {(status === "idle" || status === "error") && (
-            <div className="flex flex-col items-center gap-1">
-              <FileText
-                className="h-6 w-6 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <p className="text-sm text-foreground font-medium font-sans">
-                Drop your resume PDF here, or click to browse
-              </p>
-              <p className="text-xs text-muted-foreground font-sans">
-                PDF only, up to 5MB
-              </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {fileName}
+                  </p>
+
+                  {fileSize !== null && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      PDF · {formatFileSize(fileSize)}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={resetUploader}
+                  disabled={disabled}
+                  className="
+                    inline-flex
+                    min-h-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-border
+                    bg-background
+                    px-3
+                    text-sm
+                    font-medium
+                    text-foreground
+                    transition-colors
+                    hover:bg-muted
+                    focus-visible:outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-ring
+                    focus-visible:ring-offset-2
+                    disabled:pointer-events-none
+                    disabled:opacity-50
+                  "
+                >
+                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  Replace
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <span
+                  className="
+                    inline-flex
+                    items-center
+                    gap-1.5
+                    rounded-full
+                    bg-success/10
+                    px-2.5
+                    py-1
+                    text-xs
+                    font-medium
+                    text-success-foreground
+                  "
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-success"
+                    aria-hidden="true"
+                  />
+                  Ready to analyze
+                </span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`
+            relative
+            overflow-hidden
+            rounded-2xl
+            border
+            bg-background
+            transition-colors
+            duration-200
+            ${
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40"
+            }
+            ${disabled ? "opacity-60" : ""}
+          `}
+        >
+          <button
+            type="button"
+            onClick={openFilePicker}
+            disabled={disabled || isBusy}
+            className="
+              flex
+              min-h-[190px]
+              w-full
+              flex-col
+              items-center
+              justify-center
+              px-5
+              py-8
+              text-center
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-ring
+              focus-visible:ring-inset
+              disabled:cursor-not-allowed
+            "
+            aria-describedby="resume-upload-help"
+          >
+            {isBusy ? (
+              <>
+                <div
+                  className="
+                    mb-4
+                    flex
+                    h-12
+                    w-12
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-primary/10
+                  "
+                >
+                  <Loader2
+                    className="h-6 w-6 animate-spin text-primary"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <p className="text-sm font-semibold text-foreground">
+                  Reading your resume…
+                </p>
+
+                <p className="mt-1 max-w-sm truncate px-4 text-xs text-muted-foreground">
+                  {fileName}
+                </p>
+
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Extracting your resume content
+                </p>
+              </>
+            ) : (
+              <>
+                <div
+                  className={`
+                    mb-4
+                    flex
+                    h-12
+                    w-12
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    transition-colors
+                    ${
+                      isDragging
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary"
+                    }
+                  `}
+                >
+                  {isDragging ? (
+                    <Upload className="h-6 w-6" aria-hidden="true" />
+                  ) : (
+                    <FileText className="h-6 w-6" aria-hidden="true" />
+                  )}
+                </div>
+
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {isDragging ? "Drop your resume here" : "Upload your resume"}
+                </p>
+
+                <p className="mt-1 max-w-md text-xs leading-5 text-muted-foreground sm:text-sm">
+                  Drag and drop your PDF here, or click to browse
+                </p>
+
+                <div
+                  id="resume-upload-help"
+                  className="
+                    mt-4
+                    flex
+                    flex-wrap
+                    items-center
+                    justify-center
+                    gap-2
+                    text-[11px]
+                    text-muted-foreground
+                  "
+                >
+                  <span className="rounded-md bg-muted px-2 py-1">
+                    PDF only
+                  </span>
+
+                  <span className="rounded-md bg-muted px-2 py-1">
+                    Max 5 MB
+                  </span>
+
+                  <span className="rounded-md bg-muted px-2 py-1">
+                    Text-based PDF
+                  </span>
+                </div>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {status === "error" && error && (
         <div
           role="alert"
-          className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+          className="
+            mt-3
+            flex
+            items-start
+            gap-3
+            rounded-xl
+            border
+            border-destructive/30
+            bg-destructive/5
+            p-3
+            sm:p-4
+          "
         >
-          {error}
+          <div
+            className="
+              mt-0.5
+              flex
+              h-5
+              w-5
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-destructive/10
+            "
+          >
+            <X className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-destructive">
+              Upload failed
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-destructive/80">
+              {error}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={openFilePicker}
+            disabled={disabled}
+            className="
+              min-h-9
+              shrink-0
+              rounded-lg
+              px-2.5
+              text-xs
+              font-medium
+              text-destructive
+              transition-colors
+              hover:bg-destructive/10
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-ring
+              disabled:pointer-events-none
+              disabled:opacity-50
+            "
+          >
+            Try again
+          </button>
         </div>
       )}
+
+      <p className="mt-3 text-center text-[11px] leading-5 text-muted-foreground">
+        Your resume is processed securely to generate your ATS analysis.
+      </p>
     </div>
   );
 }
