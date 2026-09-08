@@ -21,8 +21,8 @@ export type {
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // best free Groq model for structured tasks
-const GEMINI_MODEL = "gemini-2.5-flash-lite"; // most generous free Gemini tier as of 2026
+const GROQ_MODEL = process.env.GROQ_MODEL!; // best free Groq model for structured tasks
+const GEMINI_MODEL = process.env.GEMINI_MODEL!; // most generous free Gemini tier as of 2026
 
 export interface ATSAnalysisResult {
   overall_score: number;
