@@ -1,18 +1,32 @@
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
-// pdf-parse v2 inserts a footer like "-- 1 of 3 --" after every page's
-// text. Harmless for humans reading the raw output, but it pollutes both
-// what the user sees in the editable textarea and what gets sent to the
-// AI for analysis — so it's stripped here, once, at the source.
 const PAGE_MARKER = /\n*--\s*\d+\s*of\s*\d+\s*--\n*/g;
 
-export async function extractTextFromPDF(buffer: Buffer) {
-  const parser = new PDFParse({ data: new Uint8Array(buffer), CanvasFactory });
+function normalizeText(text: string) {
+  return text
+    .replace(PAGE_MARKER, "\n\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u0000/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  if (!buffer.length) {
+    throw new Error("Cannot parse an empty PDF.");
+  }
+
+  const parser = new PDFParse({
+    data: new Uint8Array(buffer),
+    CanvasFactory,
+  });
 
   try {
     const result = await parser.getText();
-    return result.text.replace(PAGE_MARKER, "\n\n").trim();
+    return normalizeText(result.text);
   } finally {
     await parser.destroy();
   }
