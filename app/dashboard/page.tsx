@@ -1,54 +1,44 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { AlertCircle, CheckCircle2, FileSearch, Sparkles } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
+
 import { CreditsCard } from "@/components/dashboard/CreditsCard";
 import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
 import { AnalysisProgress } from "@/components/dashboard/AnalysisProgress";
 import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
+
 import type {
   ATSAnalysis,
   BulletRewrite,
   TailoredResume,
 } from "@/types/analysis";
-import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2 } from "lucide-react";
-import { SiteFooter } from "@/components/SiteFooter";
-
-interface AnalysisResults {
-  scan_id: string;
-  ats_analysis: ATSAnalysis;
-  bullet_rewrites: BulletRewrite[];
-  tailored_resume: TailoredResume;
-}
 
 export default function DashboardPage() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Separated analysis state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const [analysis, setAnalysis] = useState<ATSAnalysis | null>(null);
   const [bulletRewrites, setBulletRewrites] = useState<BulletRewrite[]>([]);
   const [tailoredResume, setTailoredResume] = useState<TailoredResume | null>(
     null
   );
-  // acceptedResume is an editable working copy derived from tailoredResume.
-  // Accepting suggestions updates acceptedResume without mutating tailoredResume.
   const [acceptedResume, setAcceptedResume] = useState<TailoredResume | null>(
     null
   );
 
-  // Plan info for the CURRENT scan, straight from the analyze response —
-  // this is what decides how SuggestedChanges renders (locked teaser or not).
   const [totalSuggestionsAvailable, setTotalSuggestionsAvailable] = useState<
     number | undefined
   >(undefined);
   const [suggestionLimit, setSuggestionLimit] = useState(3);
-
-  const [error, setError] = useState("");
 
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
@@ -60,38 +50,52 @@ export default function DashboardPage() {
   const fetchCredits = useCallback(async () => {
     setCreditsLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
+      if (!user) {
+        setCredits(null);
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from("users")
+        .select("scan_credits")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchError) {
+        console.error("Failed to fetch credits:", fetchError);
+        setCredits(0);
+        return;
+      }
+
+      setCredits(data?.scan_credits ?? 0);
+    } catch (err) {
+      console.error("Failed to fetch credits:", err);
+      setCredits(0);
+    } finally {
       setCreditsLoading(false);
-      return;
     }
-
-    const { data, error: fetchError } = await supabase
-      .from("users")
-      .select("scan_credits")
-      .eq("id", user.id)
-      .single();
-
-    if (fetchError) {
-      console.error("Failed to fetch credits:", fetchError);
-    }
-
-    setCredits(data?.scan_credits ?? 0);
-    setCreditsLoading(false);
   }, [supabase]);
 
   useEffect(() => {
     fetchCredits();
   }, [fetchCredits]);
 
-  async function handleAnalyze(e: React.FormEvent) {
+  const hasResume = resumeText.trim().length > 0;
+  const hasJobDescription = jobDescription.trim().length > 0;
+  const canAnalyze = hasResume && hasJobDescription && !loading;
+
+  async function handleAnalyze(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!resumeText.trim() || !jobDescription.trim()) {
-      setError("Please upload your resume and the job description first");
+    if (!hasResume || !hasJobDescription) {
+      setError(
+        "Add both your resume and the job description before starting the analysis."
+      );
       return;
     }
 
@@ -102,7 +106,7 @@ export default function DashboardPage() {
 
     setLoading(true);
     setError("");
-    // Clear previous analysis and tailored resumes
+
     setAnalysis(null);
     setBulletRewrites([]);
     setTailoredResume(null);
@@ -135,7 +139,7 @@ export default function DashboardPage() {
           setShowBuyModal(true);
         }
 
-        setError(data.error || "Analysis failed");
+        setError(data.error || "Analysis failed. Please try again.");
         return;
       }
 
@@ -146,221 +150,435 @@ export default function DashboardPage() {
         total_suggestions_available,
         suggestion_limit,
       } = data.data;
+
       setAnalysis(ats_analysis);
       setBulletRewrites(bullet_rewrites || []);
       setTailoredResume(tailored_resume ?? null);
       setTotalSuggestionsAvailable(total_suggestions_available);
       setSuggestionLimit(suggestion_limit);
-      // create a deep copy for acceptedResume so user accepts don't mutate original tailoredResume
+
       setAcceptedResume(
         tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null
       );
+
       fetchCredits();
     } catch (err) {
-      setError("An error occurred. Please try again.");
-      console.error(err);
+      console.error("Analysis request failed:", err);
+      setError(
+        "Something went wrong while analyzing your resume. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  function handleAcceptSuggestion(bulletIndex: number, selected: string) {
+    if (!tailoredResume || !acceptedResume) return;
+
+    const newAccepted = JSON.parse(
+      JSON.stringify(acceptedResume)
+    ) as TailoredResume;
+
+    if (newAccepted.changes_summary) {
+      newAccepted.changes_summary.bullets_rewritten =
+        (newAccepted.changes_summary.bullets_rewritten || 0) + 1;
+    }
+
+    const original = bulletRewrites[bulletIndex]?.original;
+
+    if (original) {
+      const index = newAccepted.full_text.indexOf(original);
+
+      if (index !== -1) {
+        newAccepted.full_text =
+          newAccepted.full_text.slice(0, index) +
+          selected +
+          newAccepted.full_text.slice(index + original.length);
+      } else {
+        newAccepted.full_text = `${newAccepted.full_text}\n${selected}`;
+      }
+    }
+
+    setAcceptedResume(newAccepted);
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 overflow-x-hidden lg:rounded-3xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-        {/* Header */}
-        <div className="mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary badge" />
-            ATS Resume Analysis
-          </div>
+    <main className="min-h-screen bg-background">
+      {/* =====================================================
+          MOBILE / DESKTOP PAGE HEADER
+          ===================================================== */}
 
-          <h1 className="mt-4 sm:mt-5 font-mono text-3xl sm:text-5xl font-semibold leading-tight text-foreground">
-            Analyze Your Resume
-          </h1>
+      <section className="border-b border-border/70 bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                ATS Resume Analysis
+              </div>
 
-          <p className="mt-3 max-w-2xl lg:max-w-3xl text-muted-foreground text-base leading-7 font-sans">
-            Upload your resume and match it with a job description to find ATS
-            score, missing keywords, and AI-powered improvements.
-          </p>
-        </div>
+              <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Optimize your resume for the job.
+              </h1>
 
-        {/* NEW: Mobile Credits View (Visible only on phone/tablet) 
-        <div className="block lg:hidden mb-6">
-          <CreditsCard
-            credits={credits}
-            loading={creditsLoading}
-            onBuyMore={() => setShowBuyModal(true)}
-          />
-        </div>*/}
-
-        <div className="flex flex-col lg:grid gap-6 lg:gap-10 lg:grid-cols-3">
-          {/* Main */}
-          <div className="space-y-6 lg:space-y-8 lg:col-span-2 order-2 lg:order-1">
-            <div className="max-w-3xl lg:rounded-3xl rounded-lg border border-border bg-card/90 p-4 sm:p-8 shadow-xl">
-              <form onSubmit={handleAnalyze} className="space-y-6 lg:space-y-8">
-                <div>
-                  <label className="mb-3 block font-mono text-xs tracking-wide uppercase text-muted-foreground">
-                    Your Resume
-                  </label>
-
-                  <ResumeUploader
-                    onExtracted={(text) => setResumeText(text)}
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="border-t border-border pt-8">
-                  <label
-                    htmlFor="job-description"
-                    className="mb-3 block font-mono text-xs tracking-wide uppercase text-muted-foreground"
-                  >
-                    Job Description
-                  </label>
-
-                  <Textarea
-                    id="job-description"
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Paste the job description here..."
-                    className="min-h-[160px] sm:min-h-[220px] text-base rounded-xl border font-sans bg-background px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
-                  />
-                </div>
-
-                {error && (
-                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={loading || creditsLoading}
-                  className="h-14 font-medium text-base rounded-xl w-full bg-primary hover:bg-primary/90 font-sans shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  {loading ? "Analyzing..." : "Get ATS Score →"}
-                </Button>
-              </form>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+                Upload your resume, paste the job description, and get an
+                actionable ATS analysis with AI-powered improvements.
+              </p>
             </div>
 
-            <div ref={resultsRef} className="scroll-mt-24 mt-8 lg:mt-0">
-              {loading && <AnalysisProgress />}
-
-              {analysis && tailoredResume && !loading && (
-                <div className="motion-safe:animate-in motion-safe:fade-in lg:rounded-3xl rounded-lg border border-border bg-card p-5 sm:p-8 shadow-xl">
-                  <ResultsPanel
-                    atsAnalysis={analysis}
-                    bulletRewrites={bulletRewrites}
-                    tailoredResume={tailoredResume}
-                    acceptedResume={acceptedResume}
-                    totalSuggestionsAvailable={totalSuggestionsAvailable}
-                    suggestionLimit={suggestionLimit}
-                    onUpgradeClick={() => setShowBuyModal(true)}
-                    onAcceptSuggestion={(
-                      bulletIndex: number,
-                      selected: string
-                    ) => {
-                      if (!tailoredResume || !acceptedResume) return;
-
-                      // Work on a deep copy so we never mutate the original tailoredResume
-                      const newAccepted = JSON.parse(
-                        JSON.stringify(acceptedResume)
-                      );
-
-                      // Update summary counter if present
-                      if (newAccepted.changes_summary) {
-                        newAccepted.changes_summary.bullets_rewritten =
-                          (newAccepted.changes_summary.bullets_rewritten || 0) +
-                          1;
-                      }
-
-                      // Find the original text from the bulletRewrites list and replace first occurrence
-                      const original = bulletRewrites[bulletIndex]?.original;
-                      if (original) {
-                        const idx = newAccepted.full_text.indexOf(original);
-                        if (idx !== -1) {
-                          newAccepted.full_text =
-                            newAccepted.full_text.slice(0, idx) +
-                            selected +
-                            newAccepted.full_text.slice(idx + original.length);
-                        } else {
-                          // fallback: append the selected rewrite at the end
-                          newAccepted.full_text =
-                            newAccepted.full_text + "\n" + selected;
-                        }
-                      }
-
-                      setAcceptedResume(newAccepted);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-1 lg:rounded-3xl rounded-xl text-pretty order-1 lg:order-2">
-            {/* NEW: Hide this version on mobile, show on desktop */}
-            <div className="lg:block">
+            {/* Desktop credits summary */}
+            <div className="hidden w-full shrink-0 lg:block lg:w-72">
               <CreditsCard
                 credits={credits}
                 loading={creditsLoading}
                 onBuyMore={() => setShowBuyModal(true)}
               />
             </div>
-
-            <div className="block">
-              <div className="lg:rounded-3xl rounded-xl border border-border bg-secondary p-6 shadow-xl">
-                <h3 className="mb-4 font-mono text-lg sm:text-xl font-semibold text-foreground">
-                  💡 Quick Tips
-                </h3>
-
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                  <li>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                      <span>Match keywords from the job description.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                      <span>Add measurable achievements.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                      <span>Use action verbs like Built, Led, Designed.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                      <span>Keep formatting ATS-friendly.</span>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-500" />
-                      <span>Tailor every resume to the job.</span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
+      </section>
 
-        {showBuyModal && (
-          <BuyCreditsModal
-            onClose={() => setShowBuyModal(false)}
-            onSuccess={() => {
-              setShowBuyModal(false);
-              fetchCredits();
-            }}
+      {/* =====================================================
+          MAIN WORKSPACE
+          ===================================================== */}
+
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        {/* Mobile credits */}
+        <div className="mb-6 lg:hidden">
+          <CreditsCard
+            credits={credits}
+            loading={creditsLoading}
+            onBuyMore={() => setShowBuyModal(true)}
           />
-        )}
-      </div>
-    </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+          {/* =================================================
+              PRIMARY WORKSPACE
+              ================================================= */}
+
+          <div className="min-w-0 space-y-6">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
+              <form onSubmit={handleAnalyze} aria-busy={loading}>
+                {/* Form header */}
+                <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <FileSearch className="h-4.5 w-4.5" aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                        Start a new analysis
+                      </h2>
+
+                      <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                        Your resume and target job are analyzed together.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form body */}
+                <div className="space-y-7 p-4 sm:p-6 lg:p-8">
+                  {/* Resume */}
+                  <div>
+                    <div className="mb-3 flex items-end justify-between gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-foreground">
+                          1. Your resume
+                        </label>
+
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Upload the latest version you want to improve.
+                        </p>
+                      </div>
+
+                      <span className="hidden text-xs text-muted-foreground sm:block">
+                        PDF · Max 5MB
+                      </span>
+                    </div>
+
+                    <ResumeUploader
+                      onExtracted={(text) => {
+                        setResumeText(text);
+                        setError("");
+                      }}
+                      disabled={loading}
+                    />
+
+                    {hasResume && (
+                      <div className="mt-3 flex items-center gap-2 text-xs text-success">
+                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                        Resume content is ready for analysis.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider / step indicator */}
+                  <div className="flex items-center gap-3" aria-hidden="true">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Next
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  {/* Job description */}
+                  <div>
+                    <div className="mb-3 flex items-end justify-between gap-4">
+                      <div>
+                        <label
+                          htmlFor="job-description"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          2. Target job description
+                        </label>
+
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Paste the job posting you want to tailor your resume
+                          for.
+                        </p>
+                      </div>
+
+                      {hasJobDescription && (
+                        <span className="shrink-0 text-xs text-success">
+                          Added
+                        </span>
+                      )}
+                    </div>
+
+                    <Textarea
+                      id="job-description"
+                      value={jobDescription}
+                      onChange={(e) => {
+                        setJobDescription(e.target.value);
+
+                        if (error) {
+                          setError("");
+                        }
+                      }}
+                      placeholder="Paste the complete job description here..."
+                      disabled={loading}
+                      aria-describedby="job-description-help"
+                      className="min-h-[180px] resize-y rounded-xl border-border bg-background px-4 py-3 text-sm leading-6 sm:min-h-[220px] sm:text-base"
+                    />
+
+                    <div
+                      id="job-description-help"
+                      className="mt-2 flex justify-between gap-4 text-xs text-muted-foreground"
+                    >
+                      <span>
+                        Include responsibilities, requirements, and skills.
+                      </span>
+
+                      <span className="shrink-0 tabular-nums">
+                        {jobDescription.length.toLocaleString()} chars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Error */}
+                  {error && (
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/8 p-4 text-sm text-destructive"
+                    >
+                      <AlertCircle
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                      />
+
+                      <div>
+                        <p className="font-medium">
+                          We couldn't start the analysis
+                        </p>
+
+                        <p className="mt-1 leading-5 opacity-90">{error}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <div className="border-t border-border pt-6">
+                    <Button
+                      type="submit"
+                      disabled={!canAnalyze || creditsLoading}
+                      className="h-12 w-full rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:h-13 sm:text-base"
+                    >
+                      {loading ? (
+                        <>
+                          <span
+                            className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                            aria-hidden="true"
+                          />
+                          Analyzing your resume...
+                        </>
+                      ) : creditsLoading ? (
+                        "Checking available scans..."
+                      ) : credits !== null && credits <= 0 ? (
+                        "Get more scans"
+                      ) : (
+                        <>
+                          Analyze my resume
+                          <span className="ml-2" aria-hidden="true">
+                            →
+                          </span>
+                        </>
+                      )}
+                    </Button>
+
+                    {!hasResume || !hasJobDescription ? (
+                      <p className="mt-3 text-center text-xs text-muted-foreground">
+                        Add both inputs to unlock your ATS analysis.
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-center text-xs text-muted-foreground">
+                        Your scan uses one available analysis credit.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* =================================================
+                ANALYSIS / RESULTS
+                ================================================= */}
+
+            <div ref={resultsRef} className="scroll-mt-6" aria-live="polite">
+              {loading && <AnalysisProgress />}
+
+              {analysis && tailoredResume && !loading && (
+                <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
+                  <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success">
+                        <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                      </div>
+
+                      <div>
+                        <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                          Your analysis is ready
+                        </h2>
+
+                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                          Review the recommendations below and accept the
+                          changes you want to keep.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-6 lg:p-8">
+                    <ResultsPanel
+                      atsAnalysis={analysis}
+                      bulletRewrites={bulletRewrites}
+                      tailoredResume={tailoredResume}
+                      acceptedResume={acceptedResume}
+                      totalSuggestionsAvailable={totalSuggestionsAvailable}
+                      suggestionLimit={suggestionLimit}
+                      onUpgradeClick={() => setShowBuyModal(true)}
+                      onAcceptSuggestion={handleAcceptSuggestion}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* =================================================
+              CONTEXTUAL SIDEBAR
+              ================================================= */}
+
+          <aside className="space-y-4 lg:sticky lg:top-6">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-foreground">
+                  Before you analyze
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  A few things that produce better results.
+                </p>
+              </div>
+
+              <ul className="space-y-4">
+                {[
+                  "Use the resume version you actually send to employers.",
+                  "Paste the complete job description, not just the requirements.",
+                  "Keep measurable achievements whenever possible.",
+                  "Review AI suggestions before accepting them.",
+                ].map((tip) => (
+                  <li key={tip} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
+                      <CheckCircle2
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
+                    </span>
+
+                    <span className="text-sm leading-5 text-muted-foreground">
+                      {tip}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    What you'll get
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    A structured breakdown of your resume's fit for the target
+                    role.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  "ATS score",
+                  "Keywords",
+                  "Bullet rewrites",
+                  "Tailored resume",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-lg border border-border/70 bg-background/70 px-3 py-2 text-xs font-medium text-muted-foreground"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* =====================================================
+          PURCHASE MODAL
+          ===================================================== */}
+
+      {showBuyModal && (
+        <BuyCreditsModal
+          onClose={() => setShowBuyModal(false)}
+          onSuccess={() => {
+            setShowBuyModal(false);
+            fetchCredits();
+          }}
+        />
+      )}
+    </main>
   );
 }
