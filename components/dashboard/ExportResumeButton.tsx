@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { Check, Download, Loader2 } from "lucide-react";
+import { useState } from "react";
+
 import type { TailoredResume } from "@/types/analysis";
 
 type Props = {
@@ -12,75 +14,140 @@ export default function ExportResumeButton({
   acceptedResume,
   filename,
 }: Props) {
-  const [loadingFormat, setLoadingFormat] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+  const [error, setError] = useState("");
 
-  async function download(format: "pdf" | "docx" | "txt") {
-    if (!acceptedResume) return;
-    setLoadingFormat(format);
+  async function downloadPdf() {
+    if (!acceptedResume || loading) return;
+
+    setLoading(true);
+    setDownloaded(false);
+    setError("");
 
     try {
-      const resp = await fetch("/api/export", {
+      const response = await fetch("/api/export", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acceptedResume, format, filename }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          acceptedResume,
+          format: "pdf",
+          filename,
+        }),
       });
 
-      if (!resp.ok) {
-        console.error("Export failed", resp.statusText);
-        setLoadingFormat(null);
-        return;
+      if (!response.ok) {
+        let message = "Unable to generate your PDF.";
+
+        try {
+          const data = await response.json();
+
+          if (typeof data?.error === "string") {
+            message = data.error;
+          }
+        } catch {
+          // Keep the fallback message.
+        }
+
+        throw new Error(message);
       }
 
-      const arrayBuffer = await resp.arrayBuffer();
-      const mime =
-        resp.headers.get("Content-Type") || "application/octet-stream";
-      const disp = resp.headers.get("Content-Disposition") || "attachment";
-      const matches = /filename="(.+)"/.exec(disp || "");
-      const outName = matches ? matches[1] : filename || `resume.${format}`;
+      const blob = await response.blob();
 
-      const blob = new Blob([arrayBuffer], { type: mime });
+      if (!blob.size) {
+        throw new Error("The generated PDF is empty.");
+      }
+
+      const contentDisposition =
+        response.headers.get("Content-Disposition") ?? "";
+
+      const match = contentDisposition.match(/filename="([^"]+)"/i);
+
+      const outputFilename = match?.[1] ?? filename ?? "resume.pdf";
+
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = outName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = outputFilename.endsWith(".pdf")
+        ? outputFilename
+        : `${outputFilename}.pdf`;
+
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
       URL.revokeObjectURL(url);
+
+      setDownloaded(true);
+
+      window.setTimeout(() => {
+        setDownloaded(false);
+      }, 1800);
     } catch (err) {
-      console.error("Export error:", err);
+      console.error("PDF export failed:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to generate your PDF. Please try again."
+      );
     } finally {
-      setLoadingFormat(null);
+      setLoading(false);
     }
+    7;
   }
 
-  if (!acceptedResume) return null;
+  if (!acceptedResume) {
+    return null;
+  }
 
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex flex-col gap-1.5">
       <button
-        onClick={() => download("pdf")}
-        className="text-xs bg-primary px-2 py-1 rounded-md text-white"
-        disabled={!!loadingFormat}
+        type="button"
+        onClick={downloadPdf}
+        disabled={loading}
+        className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60"
+        aria-label={
+          loading
+            ? "Generating PDF"
+            : downloaded
+            ? "PDF downloaded"
+            : "Download resume as PDF"
+        }
       >
-        {loadingFormat === "pdf" ? "Exporting PDF..." : "Export PDF"}
+        {loading ? (
+          <>
+            {" "}
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Generating PDF…
+          </>
+        ) : downloaded ? (
+          <>
+            {" "}
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            Downloaded
+          </>
+        ) : (
+          <>
+            {" "}
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            Download PDF
+          </>
+        )}{" "}
       </button>
 
-      <button
-        onClick={() => download("docx")}
-        className="text-xs bg-secondary px-2 py-1 rounded-md"
-        disabled={!!loadingFormat}
-      >
-        {loadingFormat === "docx" ? "Exporting DOCX..." : "Export DOCX"}
-      </button>
-
-      <button
-        onClick={() => download("txt")}
-        className="text-xs bg-muted px-2 py-1 rounded-md"
-        disabled={!!loadingFormat}
-      >
-        {loadingFormat === "txt" ? "Exporting..." : "Export TXT"}
-      </button>
+      {error && (
+        <p
+          role="alert"
+          className="max-w-[220px] text-right text-[11px] leading-4 text-destructive"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }

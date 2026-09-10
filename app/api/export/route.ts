@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { exportResume } from "@/lib/export-resume";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
-    // Every other route in this app (analyze, extract-pdf, create-order,
-    // verify-payment) requires a logged-in user first. This route was
-    // the one exception — meaning anyone who found the endpoint could
-    // generate unlimited PDF/DOCX files for free, with no rate limit,
-    // whether or not they'd ever paid for or even run an analysis.
     const supabase = await createServerSupabaseClient();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -19,28 +17,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { acceptedResume, format, filename } = body;
+
+    const acceptedResume = body?.acceptedResume;
 
     if (!acceptedResume) {
       return NextResponse.json(
-        { error: "acceptedResume is required" },
+        { error: "Resume data is required." },
         { status: 400 }
       );
     }
 
-    const result = await exportResume(acceptedResume, format || "pdf");
+    const result = await exportResume(acceptedResume);
+
     if (!result) {
       return NextResponse.json(
-        { error: "Failed to generate export" },
+        { error: "Failed to generate your resume PDF." },
         { status: 500 }
       );
     }
 
     const headers = new Headers();
+
     headers.set("Content-Type", result.mime);
 
-    const fileName = filename || result.filename;
-    headers.set("Content-Disposition", `attachment; filename="${fileName}"`);
+    headers.set(
+      "Content-Disposition",
+      `attachment; filename="${result.filename}"`
+    );
+
+    headers.set("Cache-Control", "private, no-store");
 
     const responseBody = result.buffer.buffer.slice(
       result.buffer.byteOffset,
@@ -51,8 +56,14 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers,
     });
-  } catch (err) {
-    console.error("Export error:", err);
-    return NextResponse.json({ error: "Export failed" }, { status: 500 });
+  } catch (error) {
+    console.error("PDF export error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Unable to generate your resume PDF. Please try again.",
+      },
+      { status: 500 }
+    );
   }
 }

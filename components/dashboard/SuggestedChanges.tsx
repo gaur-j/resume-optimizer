@@ -38,7 +38,7 @@ export default function SuggestedChanges({
   const visible = bulletRewrites ?? []; // server already truncated this if free-tier
   const total = totalSuggestionsAvailable ?? visible.length;
   // Dynamically calculate locked features based on their specific tier limit
-  const lockedCount = Math.max(total - suggestionLimit, 0);
+  const visibleCount = visible.length;
   const isFullyUnlocked = suggestionLimit >= total;
 
   const { acceptedCount, rejectedCount, pendingCount } = useMemo(() => {
@@ -92,7 +92,7 @@ export default function SuggestedChanges({
     });
   }
 
-  if (visible.length === 0 && lockedCount === 0) return null;
+  if (visible.length === 0 && visibleCount === 0) return null;
 
   const reviewedCount = acceptedCount + rejectedCount;
   const progressPct =
@@ -150,17 +150,35 @@ export default function SuggestedChanges({
 
       {/* Progress bar */}
       {visible.length > 0 && (
-        <div
-          className="h-1.5 w-full rounded-full bg-secondary overflow-hidden mb-6"
-          role="progressbar"
-          aria-valuenow={Math.round(progressPct)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
+        <div className="mb-6">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+            <span className="font-medium text-foreground">Review progress</span>
+
+            <span className="tabular-nums text-muted-foreground">
+              {reviewedCount} of {visible.length} reviewed
+            </span>
+          </div>
+
           <div
-            className="h-full bg-primary transition-[width] duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
+            className="h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+            role="progressbar"
+            aria-valuenow={Math.round(progressPct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Suggestion review progress"
+          >
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+
+          {pendingCount === 0 && (
+            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-approved">
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              All available suggestions reviewed.
+            </div>
+          )}
         </div>
       )}
 
@@ -266,7 +284,7 @@ export default function SuggestedChanges({
         })}
 
         {/* Dynamic Upgrade teaser */}
-        {lockedCount > 0 && (
+        {visibleCount > 0 && (
           <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-5 sm:p-6 mt-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
               <div className="flex items-start sm:items-center gap-3 sm:gap-4">
@@ -275,8 +293,8 @@ export default function SuggestedChanges({
                 </div>
                 <div>
                   <p className="text-sm sm:text-base font-medium text-foreground">
-                    {lockedCount} more premium rewrite
-                    {lockedCount > 1 ? "s" : ""} available
+                    {visibleCount} more premium rewrite
+                    {visibleCount > 1 ? "s" : ""} available
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Upgrade your plan to unlock the remaining AI suggestions.

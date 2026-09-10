@@ -1,376 +1,374 @@
-import { Document, Packer, Paragraph, TextRun } from "docx";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import {
+import type {
   TailoredResume,
-  TailoredResumeSection,
   TailoredResumeLine,
+  TailoredResumeSection,
 } from "@/types/analysis";
 
-function createTxtBuffer(resume: TailoredResume): Uint8Array {
-  return new Uint8Array(Buffer.from(resume.full_text || "", "utf-8"));
-}
+const PAGE_WIDTH = 612; // US Letter
+const PAGE_HEIGHT = 792;
 
-async function createDocxBuffer(resume: TailoredResume): Promise<Uint8Array> {
-  const children: Paragraph[] = [];
+const MARGIN_X = 54;
+const MARGIN_TOP = 48;
+const MARGIN_BOTTOM = 48;
 
-  function pushLine(line: TailoredResumeLine) {
-    const text = line.text || "";
+const BODY_SIZE = 10;
+const BODY_LINE_HEIGHT = 14;
 
-    switch (line.type) {
-      case "spacer":
-        children.push(new Paragraph(""));
-        return;
+const SECTION_SIZE = 11;
+const SECTION_LINE_HEIGHT = 14;
 
-      case "subheading":
-        children.push(
-          new Paragraph({
-            spacing: {
-              before: 160,
-              after: 80,
-            },
-            children: [
-              new TextRun({
-                text,
-                bold: true,
-              }),
-            ],
-          })
-        );
-        return;
+const NAME_SIZE = 20;
+const NAME_LINE_HEIGHT = 24;
 
-      case "contact":
-        children.push(
-          new Paragraph({
-            spacing: { after: 120 },
-            children: [
-              new TextRun({
-                text,
-                size: 20, // slightly smaller than body (24 half-points = 12pt default)
-                color: "555555",
-              }),
-            ],
-          })
-        );
-        return;
+const SUBHEADING_SIZE = 10.5;
 
-      case "bullet":
-        children.push(
-          new Paragraph({
-            text,
-            bullet: {
-              level: line.indent ?? 0,
-            },
-          }) as any
-        );
-        return;
-
-      default:
-        children.push(
-          new Paragraph({
-            children: [new TextRun(text)],
-          })
-        );
-    }
+function cleanText(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
   }
 
-  resume.sections.forEach((section: TailoredResumeSection) => {
-    children.push(
-      new Paragraph({
-        spacing: {
-          before: 240,
-          after: 120,
-        },
-        children: [
-          new TextRun({
-            text: section.heading.toUpperCase(),
-            bold: true,
-          }),
-        ],
-      })
-    );
-
-    section.lines.forEach(pushLine);
-  });
-
-  const doc = new Document({
-    styles: {
-      paragraphStyles: [
-        {
-          id: "Heading1",
-          name: "Heading 1",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 28,
-            bold: true,
-          },
-        },
-        {
-          id: "Heading2",
-          name: "Heading 2",
-          basedOn: "Normal",
-          next: "Normal",
-          quickFormat: true,
-          run: {
-            size: 20,
-            bold: true,
-          },
-        },
-      ],
-    },
-    sections: [
-      {
-        children,
-      },
-    ],
-  });
-
-  return new Uint8Array(await Packer.toBuffer(doc));
+  return value
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u0000/g, "")
+    .trim();
 }
 
-async function createPdfBuffer(resume: TailoredResume): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.create();
+function wrapText(
+  text: string,
+  font: Awaited<ReturnType<PDFDocument["embedFont"]>>,
+  fontSize: number,
+  maxWidth: number
+): string[] {
+  const cleaned = cleanText(text);
 
-  const normalFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-  const margin = 50;
-  const bodySize = 12;
-  const headingSize = 14;
-  const titleSize = 20;
-  const lineHeight = 18;
-
-  let page = pdfDoc.addPage();
-  let cursorY = page.getHeight() - margin;
-
-  function ensurePage() {
-    if (cursorY < margin + lineHeight) {
-      page = pdfDoc.addPage();
-      cursorY = page.getHeight() - margin;
-    }
+  if (!cleaned) {
+    return [];
   }
 
-  function wrapText(
-    text: string,
-    font: typeof normalFont,
-    fontSize: number,
-    maxWidth: number
-  ) {
-    if (!text) return [""];
+  const paragraphs = cleaned.split("\n");
+  const lines: string[] = [];
 
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
+  for (const paragraph of paragraphs) {
+    const trimmed = paragraph.trim();
+
+    if (!trimmed) {
+      lines.push("");
+      continue;
+    }
+
+    const words = trimmed.split(/\s+/);
     let current = "";
 
     for (const word of words) {
-      const test = current ? `${current} ${word}` : word;
+      const candidate = current ? `${current} ${word}` : word;
 
-      if (font.widthOfTextAtSize(test, fontSize) <= maxWidth) {
-        current = test;
-      } else {
-        if (current) lines.push(current);
-        current = word;
+      if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+        current = candidate;
+        continue;
       }
+
+      if (current) {
+        lines.push(current);
+      }
+
+      // Prevent a single unusually long token from disappearing.
+      if (font.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+        current = word;
+        continue;
+      }
+
+      let chunk = "";
+
+      for (const character of word) {
+        const candidateChunk = chunk + character;
+
+        if (font.widthOfTextAtSize(candidateChunk, fontSize) <= maxWidth) {
+          chunk = candidateChunk;
+        } else {
+          if (chunk) {
+            lines.push(chunk);
+          }
+
+          chunk = character;
+        }
+      }
+
+      current = chunk;
     }
 
-    if (current) lines.push(current);
-
-    return lines;
+    if (current) {
+      lines.push(current);
+    }
   }
 
-  function drawLines(
-    lines: string[],
-    options?: {
-      fontSize?: number;
-      bold?: boolean;
-      indent?: number;
+  return lines;
+}
+
+export async function createPdfBuffer(
+  resume: TailoredResume
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+
+  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+
+  let cursorY = PAGE_HEIGHT - MARGIN_TOP;
+
+  const contentWidth = PAGE_WIDTH - MARGIN_X * 2;
+
+  function addPage() {
+    page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+
+    cursorY = PAGE_HEIGHT - MARGIN_TOP;
+  }
+
+  function ensureSpace(height: number) {
+    if (cursorY - height < MARGIN_BOTTOM) {
+      addPage();
     }
+  }
+
+  function drawWrapped(
+    text: string,
+    options: {
+      font?: typeof regularFont;
+      size?: number;
+      lineHeight?: number;
+      indent?: number;
+      spacingAfter?: number;
+    } = {}
   ) {
-    const fontSize = options?.fontSize ?? bodySize;
-    const indent = options?.indent ?? 0;
-    const font = options?.bold ? boldFont : normalFont;
+    const font = options.font ?? regularFont;
+
+    const size = options.size ?? BODY_SIZE;
+
+    const lineHeight = options.lineHeight ?? BODY_LINE_HEIGHT;
+
+    const indent = options.indent ?? 0;
+
+    const spacingAfter = options.spacingAfter ?? 0;
+
+    const maxWidth = contentWidth - indent;
+
+    const lines = wrapText(text, font, size, maxWidth);
 
     for (const line of lines) {
-      ensurePage();
+      if (!line) {
+        cursorY -= lineHeight / 2;
+        continue;
+      }
+
+      ensureSpace(lineHeight);
 
       page.drawText(line, {
-        x: margin + indent,
+        x: MARGIN_X + indent,
         y: cursorY,
-        size: fontSize,
+        size,
         font,
         color: rgb(0, 0, 0),
       });
 
       cursorY -= lineHeight;
     }
+
+    cursorY -= spacingAfter;
   }
 
-  // Title — pulled from the very first line of the first section (usually
-  // the candidate's name). This line gets a special larger/bold render up
-  // top, so it must be SKIPPED when the main loop below reaches it again —
-  // otherwise the name renders twice: once here, once as a normal line.
-  const firstSection = resume.sections[0];
-  const titleLine = firstSection?.lines[0];
-  const title = titleLine?.text?.trim() || firstSection?.heading || "Resume";
+  function drawBullet(text: string) {
+    const indent = 14;
+    const bulletWidth = 8;
 
-  // A bit more vertical room than the shared lineHeight, since the title
-  // is drawn larger (titleSize) than body text — prevents the next
-  // element from sitting too close under a large-font title.
-  const titleLineHeight = Math.round(titleSize * 1.25);
+    const lines = wrapText(
+      cleanText(text),
+      regularFont,
+      BODY_SIZE,
+      contentWidth - indent
+    );
 
-  for (const line of wrapText(
-    title,
-    boldFont,
-    titleSize,
-    page.getWidth() - margin * 2
-  )) {
-    ensurePage();
-    page.drawText(line, {
-      x: margin,
+    if (lines.length === 0) {
+      return;
+    }
+
+    for (let index = 0; index < lines.length; index++) {
+      ensureSpace(BODY_LINE_HEIGHT);
+
+      if (index === 0) {
+        page.drawText("•", {
+          x: MARGIN_X,
+          y: cursorY,
+          size: BODY_SIZE,
+          font: regularFont,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      page.drawText(lines[index], {
+        x: MARGIN_X + indent,
+        y: cursorY,
+        size: BODY_SIZE,
+        font: regularFont,
+        color: rgb(0, 0, 0),
+      });
+
+      cursorY -= BODY_LINE_HEIGHT;
+    }
+
+    cursorY -= 2;
+  }
+
+  function drawSectionHeading(heading: string) {
+    const text = cleanText(heading).toUpperCase();
+
+    if (!text) return;
+
+    ensureSpace(SECTION_LINE_HEIGHT + 10);
+
+    cursorY -= 5;
+
+    page.drawText(text, {
+      x: MARGIN_X,
       y: cursorY,
-      size: titleSize,
+      size: SECTION_SIZE,
       font: boldFont,
       color: rgb(0, 0, 0),
     });
-    cursorY -= titleLineHeight;
+
+    cursorY -= SECTION_LINE_HEIGHT;
+
+    // Small divider line gives structure without
+    // introducing graphics that can hurt ATS readability.
+    page.drawLine({
+      start: {
+        x: MARGIN_X,
+        y: cursorY + 3,
+      },
+      end: {
+        x: PAGE_WIDTH - MARGIN_X,
+        y: cursorY + 3,
+      },
+      thickness: 0.6,
+      color: rgb(0.75, 0.75, 0.75),
+    });
+
+    cursorY -= 7;
   }
 
-  cursorY -= 6;
+  function drawLine(line: TailoredResumeLine) {
+    const text = cleanText(line.text);
 
-  for (const section of resume.sections) {
-    // Section Heading
-    drawLines(
-      wrapText(
-        section.heading.toUpperCase(),
-        boldFont,
-        headingSize,
-        page.getWidth() - margin * 2
-      ),
-      {
-        fontSize: headingSize,
-        bold: true,
+    switch (line.type) {
+      case "spacer":
+        cursorY -= 5;
+        return;
+
+      case "contact":
+        drawWrapped(text, {
+          size: 9,
+          lineHeight: 12,
+          spacingAfter: 4,
+        });
+        return;
+
+      case "subheading":
+        drawWrapped(text, {
+          font: boldFont,
+          size: SUBHEADING_SIZE,
+          lineHeight: 14,
+          spacingAfter: 2,
+        });
+        return;
+
+      case "bullet":
+        drawBullet(text);
+        return;
+
+      case "paragraph":
+      case "text":
+      default:
+        drawWrapped(text, {
+          size: BODY_SIZE,
+          lineHeight: BODY_LINE_HEIGHT,
+          spacingAfter: 2,
+        });
+    }
+  }
+
+  /*
+
+* Header
+*
+* The first meaningful line of the first section is treated
+* as the candidate name. This prevents the name from being
+* rendered twice in the body.
+  */
+  const firstSection: TailoredResumeSection | undefined = resume.sections?.[0];
+
+  const titleLine = firstSection?.lines?.find((line) => cleanText(line.text));
+
+  const title = cleanText(titleLine?.text) || "Resume";
+
+  const titleLines = wrapText(title, boldFont, NAME_SIZE, contentWidth);
+
+  for (const line of titleLines) {
+    ensureSpace(NAME_LINE_HEIGHT);
+
+    page.drawText(line, {
+      x: MARGIN_X,
+      y: cursorY,
+      size: NAME_SIZE,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+
+    cursorY -= NAME_LINE_HEIGHT;
+  }
+
+  cursorY -= 2;
+
+  /*
+
+* Remaining sections
+  */
+  for (const section of resume.sections ?? []) {
+    drawSectionHeading(section.heading);
+
+    for (const line of section.lines ?? []) {
+      if (section === firstSection && line === titleLine) {
+        continue;
       }
-    );
 
-    cursorY -= 4;
-
-    for (const line of section.lines) {
-      // Skip the exact line already rendered as the title above — without
-      // this, the first line of the first section (typically the name)
-      // gets drawn a second time here.
-      if (section === firstSection && line === titleLine) continue;
-
-      switch (line.type) {
-        case "spacer":
-          cursorY -= lineHeight / 2;
-          break;
-
-        case "contact":
-          // Smaller, non-bold, slightly muted-looking line for contact
-          // details (email | phone | LinkedIn), distinct from body text.
-          drawLines(
-            wrapText(
-              line.text,
-              normalFont,
-              bodySize - 1,
-              page.getWidth() - margin * 2
-            ),
-            {
-              fontSize: bodySize - 1,
-            }
-          );
-          break;
-
-        case "subheading":
-          drawLines(
-            wrapText(
-              line.text,
-              boldFont,
-              bodySize,
-              page.getWidth() - margin * 2
-            ),
-            {
-              bold: true,
-            }
-          );
-          break;
-
-        case "bullet": {
-          const indent = (line.indent ?? 0) * 15;
-          const bullet = `• ${line.text}`;
-
-          drawLines(
-            wrapText(
-              bullet,
-              normalFont,
-              bodySize,
-              page.getWidth() - margin * 2 - indent
-            ),
-            {
-              indent,
-            }
-          );
-
-          break;
-        }
-
-        case "paragraph":
-        case "text":
-        default:
-          drawLines(
-            wrapText(
-              line.text,
-              normalFont,
-              bodySize,
-              page.getWidth() - margin * 2
-            )
-          );
-      }
+      drawLine(line);
     }
 
-    cursorY -= lineHeight / 2;
+    cursorY -= 4;
   }
 
   const pdfBytes = await pdfDoc.save();
+
   return new Uint8Array(pdfBytes);
 }
 
-export type ExportFormat = "pdf" | "docx" | "txt";
-
 export async function exportResume(
-  acceptedResume: TailoredResume | null,
-  format: ExportFormat = "pdf"
+  acceptedResume: TailoredResume | null
 ): Promise<{
   buffer: Uint8Array;
   filename: string;
   mime: string;
 } | null> {
-  if (!acceptedResume) return null;
-
-  const baseName = "resume";
-
-  switch (format) {
-    case "txt":
-      return {
-        buffer: createTxtBuffer(acceptedResume),
-        filename: `${baseName}.txt`,
-        mime: "text/plain",
-      };
-
-    case "docx":
-      return {
-        buffer: await createDocxBuffer(acceptedResume),
-        filename: `${baseName}.docx`,
-        mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      };
-
-    case "pdf":
-    default:
-      return {
-        buffer: await createPdfBuffer(acceptedResume),
-        filename: `${baseName}.pdf`,
-        mime: "application/pdf",
-      };
+  if (!acceptedResume) {
+    return null;
   }
+
+  const buffer = await createPdfBuffer(acceptedResume);
+
+  return {
+    buffer,
+    filename: "tailored-resume.pdf",
+    mime: "application/pdf",
+  };
 }
