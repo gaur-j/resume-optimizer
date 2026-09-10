@@ -1,112 +1,136 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, FileSearch, Loader2, Sparkles } from "lucide-react";
 
-interface Step {
-  label: string;
-  /** Relative pacing weight for this stage — used only to time the visual
-   * progression, not a promise about real server timing. */
-  weight: number;
-}
-
-const STEPS: Step[] = [
-  { label: "Scoring your resume against the job description", weight: 0.4 },
-  { label: "Rewriting weak bullet points", weight: 0.35 },
-  { label: "Building your tailored resume", weight: 0.25 },
-];
-
-// Estimated total time to walk through all steps once, tuned against
-// typical Groq/Gemini latency for this pipeline (see lib/ai.ts). This is a
-// UX pacing heuristic, not a real progress signal — the API route doesn't
-// stream stage events back to the client. Once the steps run out, the
-// component holds on the final step (with its spinner still active) until
-// the real fetch() in dashboard/page.tsx resolves and unmounts this.
-const ESTIMATED_TOTAL_MS = 9000;
+const STEPS = [
+  {
+    label: "Scoring your resume against the job",
+    description: "Comparing your experience with the target role.",
+    icon: FileSearch,
+  },
+  {
+    label: "Finding improvement opportunities",
+    description: "Identifying weak bullets, missing keywords, and gaps.",
+    icon: Sparkles,
+  },
+  {
+    label: "Preparing your tailored results",
+    description: "Building the recommendations you can review and apply.",
+    icon: Sparkles,
+  },
+] as const;
 
 export function AnalysisProgress() {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    let stepIndex = 0;
-
-    function scheduleNext() {
-      if (cancelled || stepIndex >= STEPS.length - 1) return;
-      const delay = STEPS[stepIndex].weight * ESTIMATED_TOTAL_MS;
-      const timeoutId = setTimeout(() => {
-        if (cancelled) return;
-        stepIndex += 1;
-        setCurrentStep(stepIndex);
-        scheduleNext();
-      }, delay);
-      return timeoutId;
-    }
-
-    scheduleNext();
+    // This is intentionally only a soft visual cue.
+    // It never claims that the server has completed a particular stage.
+    const timeoutIds = [
+      window.setTimeout(() => setCurrentStep(1), 2500),
+      window.setTimeout(() => setCurrentStep(2), 5500),
+    ];
 
     return () => {
-      cancelled = true;
+      timeoutIds.forEach(window.clearTimeout);
     };
   }, []);
 
   return (
-    <div
+    <section
       role="status"
       aria-live="polite"
-      className="motion-safe:animate-in motion-safe:fade-in rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xl"
+      aria-busy="true"
+      className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl"
     >
-      <h2 className="mb-1 font-mono text-xl sm:text-2xl font-semibold text-foreground">
-        Analyzing Your Resume
-      </h2>
-      <p className="mb-6 text-xs sm:text-sm text-muted-foreground font-sans">
-        This usually takes a few seconds.
-      </p>
+      {" "}
+      <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
+        {" "}
+        <div className="flex items-start gap-3">
+          {" "}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            {" "}
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />{" "}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">
+              Analyzing your resume
+            </h2>
 
-      <ol className="space-y-4">
-        {STEPS.map((step, index) => {
-          const isDone = index < currentStep;
-          const isActive = index === currentStep;
-
-          return (
-            <li key={step.label} className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                {isDone ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : isActive ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                ) : (
-                  <span className="block h-2 w-2 rounded-full bg-muted-foreground/30" />
-                )}
-              </span>
-
-              <span
-                className={`text-sm font-sans leading-6 ${
-                  isActive
-                    ? "text-foreground font-medium"
-                    : isDone
-                    ? "text-muted-foreground"
-                    : "text-muted-foreground/60"
-                }`}
-              >
-                {step.label}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* Segmented progress bar mirroring the steps above */}
-      <div className="mt-6 flex gap-1.5" aria-hidden="true">
-        {STEPS.map((_, index) => (
-          <div
-            key={index}
-            className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${
-              index <= currentStep ? "bg-primary" : "bg-muted"
-            }`}
-          />
-        ))}
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+              We&apos;re comparing your resume with the target job and preparing
+              your recommendations.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <ol className="space-y-5">
+          {STEPS.map((step, index) => {
+            const isDone = index < currentStep;
+            const isActive = index === currentStep;
+            const Icon = step.icon;
+
+            return (
+              <li key={step.label} className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center">
+                  {isDone ? (
+                    <CheckCircle2
+                      className="h-5 w-5 text-success"
+                      aria-hidden="true"
+                    />
+                  ) : isActive ? (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                  ) : (
+                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/25" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p
+                    className={`text-sm leading-5 ${
+                      isActive
+                        ? "font-medium text-foreground"
+                        : isDone
+                        ? "text-muted-foreground"
+                        : "text-muted-foreground/60"
+                    }`}
+                  >
+                    {step.label}
+                  </p>
+
+                  <p
+                    className={`mt-1 text-xs leading-5 ${
+                      isActive
+                        ? "text-muted-foreground"
+                        : "text-muted-foreground/50"
+                    }`}
+                  >
+                    {step.description}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="mt-7">
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-muted"
+            aria-hidden="true"
+          >
+            <div className="h-full w-2/5 animate-pulse rounded-full bg-primary" />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+            <span>Processing securely</span>
+            <span>Usually takes a few seconds</span>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

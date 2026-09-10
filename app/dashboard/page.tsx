@@ -116,7 +116,7 @@ export default function DashboardPage() {
     requestAnimationFrame(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
-        block: "start",
+        block: "nearest",
       });
     });
 
@@ -448,7 +448,7 @@ export default function DashboardPage() {
                 ANALYSIS / RESULTS
                 ================================================= */}
 
-            <div ref={resultsRef} className="scroll-mt-6" aria-live="polite">
+            <div ref={resultsRef} className="scroll-mt-24" aria-live="polite">
               {loading && <AnalysisProgress />}
 
               {analysis && tailoredResume && !loading && (
