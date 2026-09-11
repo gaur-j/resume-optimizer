@@ -23,16 +23,48 @@ const NAME_LINE_HEIGHT = 24;
 
 const SUBHEADING_SIZE = 10.5;
 
+/**
+ * pdf-lib's built-in Helvetica/HelveticaBold fonts only support
+ * WinAnsiEncoding (roughly Windows-1252 / Latin-1) — NOT full Unicode.
+ * LLM output routinely contains typographic punctuation outside that set
+ * (a non-breaking hyphen "‑" U+2011 is what actually crashed this export;
+ * smart quotes, ellipses, and zero-width characters are the same class of
+ * risk). Rather than maintaining a growing blocklist of "characters that
+ * broke it last time", this normalizes the common cases to safe ASCII
+ * (which also happens to be more ATS-friendly than fancy typography) and
+ * strips anything else outside Latin-1 as a catch-all, so a character we
+ * haven't seen yet can't crash the export again.
+ */
+function sanitizeForPdf(value: string): string {
+  return (
+    value
+      // Hyphen/dash variants -> plain ASCII hyphen.
+      .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, "-")
+      // Smart single quotes/apostrophes -> straight quote
+      .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+      // Smart double quotes -> straight quote
+      .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+      // Ellipsis
+      .replace(/\u2026/g, "...")
+      // Zero-width characters / BOM have no visual representation anyway
+      .replace(/[\u200B\u200C\u200D\uFEFF]/g, "")
+      // Catch-all: anything else outside Latin-1 (WinAnsi/CP1252's range)
+      // gets dropped rather than crashing the whole export.
+      .replace(/[^\u0000-\u00FF]/g, "")
+  );
+}
+
 function cleanText(value: unknown): string {
   if (typeof value !== "string") {
     return "";
   }
 
-  return value
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .replace(/\u0000/g, "")
-    .trim();
+  return sanitizeForPdf(
+    value
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\u0000/g, "")
+  ).trim();
 }
 
 function wrapText(
