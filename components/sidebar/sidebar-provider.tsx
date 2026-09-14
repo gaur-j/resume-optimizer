@@ -4,8 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -18,15 +17,41 @@ type SidebarContextValue = {
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 const STORAGE_KEY = "ro-sidebar-collapsed";
+const SIDEBAR_CHANGE_EVENT = "ro-sidebar-change";
 
-/**
- * @param forceExpanded - When true, never reads or writes the persisted
- * collapse state, always stays expanded, and disables the Cmd/Ctrl+B
- * shortcut. Used by the mobile drawer (MobileSidebar), which would
- * otherwise silently inherit the desktop rail's collapsed state from
- * the same localStorage key — icon-only collapsed mode doesn't make
- * sense once the sidebar is already a drawer the user just opened.
- */
+function subscribeSidebar(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(SIDEBAR_CHANGE_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SIDEBAR_CHANGE_EVENT, callback);
+  };
+}
+
+function getSidebarSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function getSidebarServerSnapshot(): boolean {
+  return false;
+}
+
+function persistSidebarState(value: boolean) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
+
+    // The browser's "storage" event does not fire in the same tab.
+    window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
+  } catch {
+    // localStorage unavailable — UI state still works for this interaction
+  }
+}
+
 export function SidebarProvider({
   children,
   forceExpanded = false,
@@ -34,71 +59,31 @@ export function SidebarProvider({
   children: ReactNode;
   forceExpanded?: boolean;
 }) {
-  // Default to expanded on first paint; sync from localStorage after mount
-  // to avoid a hydration mismatch between server and client.
-  const [collapsed, setCollapsedState] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const persistedCollapsed = useSyncExternalStore(
+    subscribeSidebar,
+    getSidebarSnapshot,
+    getSidebarServerSnapshot
+  );
 
-  useEffect(() => {
-    if (forceExpanded) {
-      setHydrated(true);
-      return;
-    }
-
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) setCollapsedState(stored === "1");
-    } catch {
-      // localStorage unavailable (e.g. privacy mode) — fall back to expanded
-    }
-    setHydrated(true);
-  }, [forceExpanded]);
+  const collapsed = forceExpanded ? false : persistedCollapsed;
 
   const setCollapsed = useCallback(
     (value: boolean) => {
       if (forceExpanded) return;
-      setCollapsedState(value);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
-      } catch {
-        // ignore write failures
-      }
+      persistSidebarState(value);
     },
     [forceExpanded]
   );
 
   const toggle = useCallback(() => {
     if (forceExpanded) return;
-    setCollapsedState((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        // ignore write failures
-      }
-      return next;
-    });
-  }, [forceExpanded]);
-
-  // Cmd/Ctrl + B toggles the sidebar, matching the convention used by
-  // most modern editors and SaaS dashboards. Disabled for forced-expanded
-  // instances (e.g. the mobile drawer) since there's no collapse UI there.
-  useEffect(() => {
-    if (forceExpanded) return;
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        toggle();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [forceExpanded, toggle]);
+    persistSidebarState(!persistedCollapsed);
+  }, [forceExpanded, persistedCollapsed]);
 
   return (
     <SidebarContext.Provider
       value={{
-        collapsed: forceExpanded ? false : hydrated ? collapsed : false,
+        collapsed,
         toggle,
         setCollapsed,
       }}
@@ -110,8 +95,10 @@ export function SidebarProvider({
 
 export function useSidebar() {
   const ctx = useContext(SidebarContext);
+
   if (!ctx) {
     throw new Error("useSidebar must be used within a <SidebarProvider>");
   }
+
   return ctx;
 }

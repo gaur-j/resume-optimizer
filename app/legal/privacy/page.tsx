@@ -74,9 +74,9 @@ export default function PrivacyPolicyPage() {
           and do not use your submissions to train their general-purpose models
           under their standard API terms. We recommend removing personal
           identifiers you consider sensitive (such as a home address) from your
-          resume text if you'd prefer not to share them, since only your name
-          and contact details relevant to job applications are typically needed
-          for accurate analysis.
+          resume text if you&apos;d prefer not to share them, since only your
+          name and contact details relevant to job applications are typically
+          needed for accurate analysis.
         </p>
       </section>
 

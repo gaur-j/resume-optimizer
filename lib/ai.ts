@@ -144,7 +144,7 @@ Respond with ONLY valid JSON, no markdown, no code blocks, no explanation:
 
   try {
     return JSON.parse(cleanJSON(responseText)) as ATSAnalysisResult;
-  } catch (error) {
+  } catch {
     console.error("Failed to parse ATS response:", responseText);
     throw new Error("Failed to parse ATS analysis response");
   }
@@ -183,7 +183,7 @@ Respond with ONLY valid JSON, no markdown:
   try {
     const parsed = JSON.parse(cleanJSON(responseText));
     return (parsed.rewrites || []) as BulletRewriteResult[];
-  } catch (error) {
+  } catch {
     console.error("Failed to parse bullets response:", responseText);
     throw new Error("Failed to parse bullet rewrite response");
   }
@@ -211,7 +211,7 @@ Respond with ONLY valid JSON:
   const responseText = await callAI(systemPrompt, userPrompt);
   try {
     return JSON.parse(cleanJSON(responseText)) as SummaryResult;
-  } catch (error) {
+  } catch {
     console.error("Failed to parse summary response:", responseText);
     throw new Error("Failed to parse summary response");
   }

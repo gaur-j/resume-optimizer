@@ -216,8 +216,8 @@ export default function ResumePreview({ tailoredResume }: Props) {
           {/* Optional quick contact / small print hint for printing */}
           <div className="text-xs text-muted-foreground mt-2 print:text-[10px]">
             <p className="print:hidden">
-              Tip: Use your browser's Print (Ctrl/Cmd+P) to export to PDF. This
-              note will be hidden on print.
+              Tip: Use your browser&apos;s Print (Ctrl/Cmd+P) to export to PDF.
+              This note will be hidden on print.
             </p>
           </div>
         </aside>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Check, X, Lock, Sparkles, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BulletRewrite } from "@/types/analysis";
@@ -35,25 +35,24 @@ export default function SuggestedChanges({
   const [status, setStatus] = useState<Record<number, Status>>({});
   const [selectedText, setSelectedText] = useState<Record<number, string>>({});
 
-  const visible = bulletRewrites ?? []; // server already truncated this if free-tier
+  const visible = bulletRewrites; // server already truncated this if free-tier
   const total = totalSuggestionsAvailable ?? visible.length;
   // Dynamically calculate locked features based on their specific tier limit
   const visibleCount = visible.length;
   const isFullyUnlocked = suggestionLimit >= total;
 
-  const { acceptedCount, rejectedCount, pendingCount } = useMemo(() => {
-    let acceptedN = 0;
-    let rejectedN = 0;
-    visible.forEach((_, i) => {
-      if (status[i] === "accepted") acceptedN++;
-      else if (status[i] === "rejected") rejectedN++;
-    });
-    return {
-      acceptedCount: acceptedN,
-      rejectedCount: rejectedN,
-      pendingCount: visible.length - acceptedN - rejectedN,
-    };
-  }, [status, visible]);
+  let acceptedCount = 0;
+  let rejectedCount = 0;
+
+  visible.forEach((_, index) => {
+    if (status[index] === "accepted") {
+      acceptedCount++;
+    } else if (status[index] === "rejected") {
+      rejectedCount++;
+    }
+  });
+
+  const pendingCount = visible.length - acceptedCount - rejectedCount;
 
   function handleAccept(i: number, option: string) {
     setStatus((s) => ({ ...s, [i]: "accepted" }));

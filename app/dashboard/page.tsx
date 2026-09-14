@@ -19,6 +19,8 @@ import type {
   TailoredResume,
 } from "@/types/analysis";
 
+const supabase = createClient();
+
 export default function DashboardPage() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -44,12 +46,9 @@ export default function DashboardPage() {
   const [creditsLoading, setCreditsLoading] = useState(true);
   const [showBuyModal, setShowBuyModal] = useState(false);
 
-  const supabase = createClient();
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const fetchCredits = useCallback(async () => {
-    setCreditsLoading(true);
-
     try {
       const {
         data: { user },
@@ -393,7 +392,7 @@ export default function DashboardPage() {
 
                       <div>
                         <p className="font-medium">
-                          We couldn't start the analysis
+                          We couldn&apos;t start the analysis
                         </p>
 
                         <p className="mt-1 leading-5 opacity-90">{error}</p>
@@ -536,12 +535,12 @@ export default function DashboardPage() {
 
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    What you'll get
+                    What you&apos;ll get
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    A structured breakdown of your resume's fit for the target
-                    role.
+                    A structured breakdown of your resume&apos;s fit for the
+                    target role.
                   </p>
                 </div>
               </div>

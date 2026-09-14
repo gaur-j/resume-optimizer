@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Razorpay from "razorpay";
+import type { Orders } from "razorpay/dist/types/orders";
+import type { INormalizeError } from "razorpay/dist/types/api";
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
@@ -51,23 +53,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Razorpay order
-    const razorpayOrder = await new Promise<any>((resolve, reject) => {
-      razorpay.orders.create(
-        {
-          amount: amount_inr * 100,
-          currency: "INR",
-          receipt: `order_${user.id.slice(0, 8)}_${Date.now().toString(36)}`,
-          payment_capture: true,
-        },
-        (error: any, order: any) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(order);
+    const razorpayOrder = await new Promise<Orders.RazorpayOrder>(
+      (resolve, reject) => {
+        razorpay.orders.create(
+          {
+            amount: amount_inr * 100,
+            currency: "INR",
+            receipt: `order_${user.id.slice(0, 8)}_${Date.now().toString(36)}`,
+            payment_capture: true,
+          },
+          (error: INormalizeError | null, order: Orders.RazorpayOrder) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(order);
+            }
           }
-        }
-      );
-    });
+        );
+      }
+    );
 
     // Save order to database
     const { data: paymentData, error: paymentError } = await supabase

@@ -4,28 +4,33 @@ import * as React from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
 
-  // Prevent hydration mismatch by ensuring it only renders after mounting
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 
   if (!mounted) {
-    return <div className="w-9 h-9" />; // Placeholder to prevent layout shift
+    return <div className="h-9 w-9" aria-hidden="true" />;
   }
+
+  const isDark = theme === "dark";
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      aria-label="Toggle theme"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {/* Sun icon for dark mode (click to go light) */}
-      {theme === "dark" ? (
+      {isDark ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -36,6 +41,7 @@ export function ThemeToggle() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
         >
           <circle cx="12" cy="12" r="4" />
           <path d="M12 2v2" />
@@ -48,7 +54,6 @@ export function ThemeToggle() {
           <path d="m19.07 4.93-1.41 1.41" />
         </svg>
       ) : (
-        /* Moon icon for light mode (click to go dark) */
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
@@ -59,6 +64,7 @@ export function ThemeToggle() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
         >
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
         </svg>
