@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { ChevronDown } from "lucide-react";
 import { CheckIcon } from "lucide-react";
 import { FileSearch } from "lucide-react";
+import { ATSPreview } from "@/components/marketing/ATSPreview";
 
 const FAQS = [
   {
@@ -112,14 +113,13 @@ export default function Home() {
                 minutes, free.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
-                <AuthCTAButton
-                  mode="signup"
-                  size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary transition-all duration-300 hover:scale-[1.02] shadow-lg"
+                <a
+                  href="#free-ats-check"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:from-primary/90 hover:to-primary sm:w-auto"
                 >
-                  <FileSearch className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  <FileSearch className="mr-2 h-4 w-4" />
                   Check My Resume — Free →
-                </AuthCTAButton>
+                </a>
               </div>
               <div className="mt-4 space-y-2">
                 <p className="text-[10px] sm:text-xs font-mono text-muted-foreground mt-4 leading-relaxed">
@@ -177,6 +177,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <ATSPreview />
 
         {/* Trust bar */}
         <section className="border-y border-border/50 bg-secondary py-4 sm:py-6">

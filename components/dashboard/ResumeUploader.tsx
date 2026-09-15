@@ -21,6 +21,7 @@ import { toast } from "sonner";
 interface ResumeUploaderProps {
   onExtracted: (text: string) => void;
   disabled?: boolean;
+  endpoint?: string;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -65,6 +66,7 @@ function validateFile(file: File): string | null {
 export function ResumeUploader({
   onExtracted,
   disabled = false,
+  endpoint = "/api/extract-pdf",
 }: ResumeUploaderProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [fileName, setFileName] = useState("");
@@ -129,7 +131,7 @@ export function ResumeUploader({
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("/api/extract-pdf", {
+        const response = await fetch(endpoint, {
           method: "POST",
           body: formData,
           signal: controller.signal,
@@ -195,7 +197,7 @@ export function ResumeUploader({
         }
       }
     },
-    [disabled, isBusy, onExtracted]
+    [disabled, isBusy, onExtracted, endpoint]
   );
 
   useEffect(() => {
