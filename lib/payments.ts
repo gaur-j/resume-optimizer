@@ -9,6 +9,54 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * server-to-server webhook call that has no logged-in user session —
  * there are no cookies to read a user out of on that request.
  */
+
+async function sendServerPurchaseEvent(payment: {
+  user_id: string;
+  razorpay_order_id: string;
+  amount_inr: number;
+  attribution?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  } | null;
+}) {
+  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const apiSecret = process.env.GA_API_SECRET;
+
+  if (!measurementId || !apiSecret) return;
+
+  try {
+    await fetch(
+      `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          // Using the Supabase user id as client_id groups this event
+          // under the same GA4 user as their earlier on-site sessions,
+          // even though this request has no browser cookies to read.
+          client_id: payment.user_id,
+          events: [
+            {
+              name: "purchase",
+              params: {
+                transaction_id: payment.razorpay_order_id,
+                value: payment.amount_inr,
+                currency: "INR",
+                utm_source: payment.attribution?.utm_source ?? "(direct)",
+                utm_medium: payment.attribution?.utm_medium ?? "(none)",
+                utm_campaign: payment.attribution?.utm_campaign ?? "(not set)",
+              },
+            },
+          ],
+        }),
+      }
+    );
+  } catch (err) {
+    // A broken analytics call must never break a real payment.
+    console.error("GA4 purchase event failed:", err);
+  }
+}
+
 export async function grantCreditsForOrder(
   razorpayOrderId: string
 ): Promise<
@@ -69,6 +117,16 @@ export async function grantCreditsForOrder(
   if (creditError) {
     return { granted: false, reason: "Failed to add credits to user" };
   }
+
+  // Fires exactly once per order, regardless of whether the client
+  // verify-call or the webhook got here first — that's what the
+  // alreadyProcessed check above already guarantees.
+  await sendServerPurchaseEvent({
+    user_id: payment.user_id,
+    razorpay_order_id: payment.razorpay_order_id,
+    amount_inr: payment.amount_inr,
+    attribution: payment.attribution,
+  });
 
   return {
     granted: true,

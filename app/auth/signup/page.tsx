@@ -9,6 +9,7 @@ import LoginPage from "@/app/auth/login/page";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -56,6 +57,7 @@ export default function SignupPage() {
     // immediately and the user is already signed in — send them straight in.
     if (data.session) {
       toast.success("Successfully sign up!");
+      trackEvent("sign_up", { method: "email" });
       router.push("/dashboard");
       router.refresh();
       return;
@@ -64,6 +66,7 @@ export default function SignupPage() {
     // Otherwise a confirmation email was sent — this only happens once
     // per signup, not on every login, so it won't hit the rate limit
     // the way magic links did.
+    trackEvent("sign_up", { method: "email", status: "pending_confirmation" });
     setMessage("Check your email to confirm your account, then log in.");
     setLoading(false);
   }

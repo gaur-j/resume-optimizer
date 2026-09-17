@@ -40,12 +40,20 @@ export function NavAuthLink({
 export function AuthCTAButton({
   mode,
   children,
+  onClick,
   ...buttonProps
 }: { mode: "login" | "signup" } & ComponentProps<typeof Button>) {
   const { open } = useAuthModal();
 
   return (
-    <Button type="button" onClick={() => open(mode)} {...buttonProps}>
+    <Button
+      type="button"
+      onClick={(e) => {
+        onClick?.(e);
+        open(mode);
+      }}
+      {...buttonProps}
+    >
       {children}
     </Button>
   );

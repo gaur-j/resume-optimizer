@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/Theme/theme-provider";
+import { AttributionCapture } from "@/components/analytics/AttributionCapture";
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -37,12 +38,10 @@ export const metadata: Metadata = {
     "ATS score",
     "resume keyword checker",
     "resume AI",
-    "LinkedIn profile optimizer",
     "CV checker",
     "resume improvement",
-    "job application",
+    "ATS resume optimization",
     "resume scanner",
-    "India jobs",
     "career tools",
   ],
   authors: [{ name: "Resume AI Optimizer" }],
@@ -131,7 +130,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-
+          <AttributionCapture />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>

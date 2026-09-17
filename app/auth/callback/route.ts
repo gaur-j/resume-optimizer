@@ -1,30 +1,33 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-/**
- * Handles the redirect back from Google/LinkedIn/Facebook OAuth, as well
- * as email confirmation and password-reset links. Supabase's OAuth and
- * email-link flows use the PKCE "code" query param, which must be
- * exchanged for a session on the server — this can't be done in a
- * client component, which is why this replaces the old callback page.tsx.
- *
- * IMPORTANT: delete app/auth/callback/page.tsx if it still exists —
- * a route.ts and page.tsx cannot coexist in the same folder segment.
- */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const provider = searchParams.get("provider") ?? "oauth";
 
   if (code) {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+    if (!error && data.user) {
+      const createdAt = new Date(data.user.created_at).getTime();
+      const lastSignInAt = new Date(
+        data.user.last_sign_in_at ?? data.user.created_at
+      ).getTime();
+      const isNewUser = lastSignInAt - createdAt < 10_000;
+
+      const redirectUrl = new URL(`${origin}${next}`);
+      if (isNewUser) {
+        redirectUrl.searchParams.set("new_user", "1");
+        redirectUrl.searchParams.set("method", provider);
+      }
+
+      return NextResponse.redirect(redirectUrl);
     }
 
-    console.error("Auth callback error:", error.message);
+    console.error("Auth callback error:", error?.message);
   }
 
   return NextResponse.redirect(

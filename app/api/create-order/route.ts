@@ -13,6 +13,11 @@ interface OrderRequest {
   amount_inr: number;
   scan_credits: number;
   plan_type: "single" | "pack";
+  attribution?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -27,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { amount_inr, scan_credits, plan_type } =
+    const { amount_inr, scan_credits, plan_type, attribution } =
       (await request.json()) as OrderRequest;
 
     // Validate inputs
@@ -82,6 +87,7 @@ export async function POST(request: NextRequest) {
         amount_inr,
         scan_credits_granted: scan_credits,
         status: "pending",
+        attribution: attribution ?? null,
       })
       .select()
       .single();

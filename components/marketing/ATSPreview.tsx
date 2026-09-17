@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
 import { AuthCTAButton } from "@/components/auth/AuthTriggers";
+import { trackEvent } from "@/lib/analytics";
 
 type PreviewResult = {
   overall_score: number;
@@ -65,6 +66,11 @@ export function ATSPreview() {
       }
 
       setResult(data.data);
+      trackEvent("preview_score_viewed", {
+        score: data.data.overall_score,
+        matched_keywords: data.data.matched_keyword_count,
+        missing_keywords: data.data.missing_keyword_count,
+      });
     } catch (err) {
       setError(
         err instanceof Error
@@ -249,7 +255,15 @@ export function ATSPreview() {
               </p>
 
               <div className="mt-4">
-                <AuthCTAButton mode="signup" className="w-full sm:w-auto">
+                <AuthCTAButton
+                  mode="signup"
+                  className="w-full sm:w-auto"
+                  onClick={() =>
+                    trackEvent("preview_to_signup_click", {
+                      score: result.overall_score,
+                    })
+                  }
+                >
                   Unlock my full analysis →
                 </AuthCTAButton>
               </div>

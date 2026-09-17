@@ -12,6 +12,9 @@ import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
 import { AnalysisProgress } from "@/components/dashboard/AnalysisProgress";
 import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
+import { Suspense } from "react";
+import { trackEvent } from "@/lib/analytics";
+import { NewUserTracker } from "@/components/analytics/NewUserTracker";
 
 import type {
   ATSAnalysis,
@@ -156,6 +159,11 @@ export default function DashboardPage() {
       setTotalSuggestionsAvailable(total_suggestions_available);
       setSuggestionLimit(suggestion_limit);
 
+      trackEvent("resume_scan_completed", {
+        score: ats_analysis.overall_score,
+        suggestion_limit,
+      });
+
       setAcceptedResume(
         tailored_resume ? JSON.parse(JSON.stringify(tailored_resume)) : null
       );
@@ -203,6 +211,9 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <NewUserTracker />
+      </Suspense>
       {/* =====================================================
           MOBILE / DESKTOP PAGE HEADER
           ===================================================== */}

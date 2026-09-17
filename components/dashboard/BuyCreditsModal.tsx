@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
+import { getAttribution } from "@/lib/attribution";
+import { AttributionCapture } from "../analytics/AttributionCapture";
 
 declare global {
   interface Window {
@@ -73,6 +76,7 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
             amount_inr: plan.price,
             scan_credits: plan.credits,
             plan_type: plan.type,
+            attribution: getAttribution(),
           }),
         });
 
@@ -81,6 +85,11 @@ export function BuyCreditsModal({ onClose, onSuccess }: BuyCreditsModalProps) {
         if (!orderRes.ok) {
           return reject(new Error(orderData.error || "Failed to create order"));
         }
+
+        trackEvent("payment_initiated", {
+          plan_type: plan.type,
+          amount_inr: plan.price,
+        });
 
         const rzp = new window.Razorpay({
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
