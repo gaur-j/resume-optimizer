@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/Theme/theme-provider";
 import { AttributionCapture } from "@/components/analytics/AttributionCapture";
+import { TrackPageViews } from "@/components/analytics/TrackPageViews";
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -21,15 +22,28 @@ const plexSans = IBM_Plex_Sans({
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "localhost:3000";
 
+// Vercel sets VERCEL_ENV to "production" | "preview" | "development" per
+// deployment. This is evaluated server-side while rendering this layout,
+// so it does NOT need a NEXT_PUBLIC_ prefix - it's deciding whether to
+// even emit the <Script> tags into the HTML, not reading a value in
+// client-side JS. Falls back to NODE_ENV for non-Vercel hosting.
+const isProductionDeployment = process.env.VERCEL_ENV
+  ? process.env.VERCEL_ENV === "production"
+  : process.env.NODE_ENV === "production";
+
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
+  icons: {
+    icon: "/site.ico",
+    shortcut: "/site.ico",
+  },
   title: {
     default: "Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
     template:
       "%s | Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
   },
   description:
-    "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes. | Boost your interview chances with AI. Get a free ATS resume score, keyword analysis, resume rewrites, and LinkedIn optimization in under 2 minutes.",
+    "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes. | Boost your interview chances with AI. Get a free ATS resume score, keyword analysis, resume rewrites in under 2 minutes.",
   keywords: [
     "ATS resume checker",
     "AI resume builder",
@@ -54,11 +68,11 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: APP_URL,
-    siteName: "Resume AI Optimizer",
+    siteName: "Get Resume AI",
     title:
       "Resume AI Optimizer | Check Your ATS Score Free | Free ATS Resume Score Checker",
     description:
-      "AI-powered resume optimization. Get instant ATS score, find missing keywords, and rewrite weak bullets. | Analyze your resume with AI, discover missing ATS keywords, improve weak bullet points, and increase your chances of landing interviews.",
+      "Analyze your resume with AI, discover missing ATS keywords, improve weak bullet points, and increase your chances of landing interviews.",
     images: [
       {
         url: "/og-image.png",
@@ -71,8 +85,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Resume AI Optimizer | Free ATS Resume Score Checker",
-    description:
-      "Get an ATS score, keyword analysis, AI resume rewrites, and LinkedIn optimization for free.",
+    description: "Get an ATS score, keyword analysis, AI resume rewrites.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -105,22 +118,23 @@ export default function RootLayout({
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="afterInteractive"
         />
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`
+        {isProductionDeployment &&
+          process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+                strategy="afterInteractive"
+              />
+              <Script id="ga4-init" strategy="afterInteractive">
+                {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
                 gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
               `}
-            </Script>
-          </>
-        )}
+              </Script>
+            </>
+          )}
       </head>
       <body className={plexSans.className}>
         <ThemeProvider
@@ -131,6 +145,7 @@ export default function RootLayout({
         >
           {children}
           <AttributionCapture />
+          {isProductionDeployment && <TrackPageViews />}
           <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
