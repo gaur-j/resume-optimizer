@@ -19,14 +19,36 @@ export default function ForgotPasswordPage() {
     setError("");
     setMessage("");
 
+    // Routed through /auth/callback (the same code-exchange route already
+    // used for OAuth) instead of straight to /auth/reset-password. That
+    // route calls exchangeCodeForSession server-side and redirects to a
+    // clean URL, so the one-time recovery code never sits in the address
+    // bar of a page that also loads analytics scripts.
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${
+        window.location.origin
+      }/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
     });
 
-    if (error) {
-      setError(error.message);
+    // Supabase's /recover endpoint always returns success regardless of
+    // whether the email is registered (this is intentional, to prevent
+    // account enumeration). We mirror that here: show the same generic
+    // message for both "sent" and "failed" cases, and never surface the
+    // raw error text, which could otherwise leak backend/config details.
+    // The one exception is a client-side-obvious input problem (empty/
+    // malformed email), which is safe to call out and isn't specific to
+    // any account.
+    if (error?.status === 429) {
+      // Rate limiting applies the same way regardless of whether the email
+      // is registered, so surfacing it doesn't leak anything - and telling
+      // the user honestly beats a false "check your email".
+      setError("Too many requests. Please wait a minute and try again.");
+    } else if (error && error.status && error.status >= 500) {
+      setError("Something went wrong on our end. Please try again shortly.");
     } else {
-      setMessage("Check your email for a password reset link.");
+      setMessage(
+        "If an account exists for that email, we've sent a password reset link."
+      );
     }
 
     setLoading(false);

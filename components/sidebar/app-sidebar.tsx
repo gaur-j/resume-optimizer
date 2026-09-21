@@ -50,7 +50,13 @@ export function AppSidebar({ user }: { user: AccountUser }) {
         <Separator className="bg-border/60" />
 
         {/* Primary nav */}
-        <ScrollArea className="flex-1 px-3 py-3">
+        {/* min-h-0 is required here: a flex-1 child of a flex-col
+            container defaults to min-height:auto, which lets it grow to
+            fit its content instead of shrinking to the space actually
+            available. Without it, a long enough nav list pushes
+            SidebarFooter (the account menu) below the rail's visible
+            area instead of the list scrolling internally. */}
+        <ScrollArea className="min-h-0 flex-1 px-3 py-3">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
               <NavLink key={item.href} item={item} />

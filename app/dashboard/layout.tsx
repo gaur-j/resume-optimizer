@@ -1,6 +1,17 @@
+import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+
+// Authenticated, user-specific app area - no search-ranking value, and
+// nothing here should be indexable regardless of what the root layout's
+// default robots setting is.
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
@@ -33,18 +44,10 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      {/* CHANGED: min-h-screen -> h-screen overflow-hidden. This turns the
-          whole dashboard into a fixed-height app shell so the DOCUMENT
-          itself never scrolls — that's what was letting the sidebar
-          scroll away with the rest of the page. */}
       <div className="flex h-screen overflow-hidden bg-secondary">
         {/* Desktop Sidebar */}
         <AppSidebar user={accountUser} />
 
-        {/* CHANGED: added overflow-y-auto. This column (header + main)
-            is now its own independent scroll container — everything
-            inside it scrolls without moving the sidebar, which sits
-            outside this container entirely. */}
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           {/* Header */}
           <header className="sticky top-0 z-40 border-b border-border bg-card">

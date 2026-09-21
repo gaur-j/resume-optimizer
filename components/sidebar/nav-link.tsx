@@ -65,7 +65,13 @@ export function NavLink({ item }: { item: NavItem }) {
 
   return (
     <Tooltip>
-      <TooltipTrigger>{link}</TooltipTrigger>
+      {/* Base UI's TooltipTrigger renders a <button> by default, so
+          passing the Link as children here would nest an <a> inside a
+          <button> - invalid HTML (interactive content inside interactive
+          content) and inconsistent focus/click behavior. `render` merges
+          the tooltip's trigger behavior onto the Link's own <a> instead,
+          matching the same pattern already used in account-menu.tsx. */}
+      <TooltipTrigger render={link} />
       <TooltipContent side="right" sideOffset={12} className="font-medium">
         {item.title}
         {item.badge && (

@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,14 +24,38 @@ type AccountUser = {
  * Pinned to the bottom of the sidebar — desktop rail and mobile drawer
  * alike. Renders the account menu (which includes a "Sign Out" item)
  * plus a direct, always-visible sign-out icon-button for a one-click
- * path that doesn't require opening the dropdown first. Both paths
- * submit the SAME hidden form via ref, so there's exactly one sign-out
+ * path that doesn't require opening the dropdown first. Both paths call
+ * the SAME signOut() function, so there's exactly one sign-out
  * implementation, just two entry points to it.
+ *
+ * signOut() calls POST /auth/logout via fetch rather than submitting a
+ * native <form> - a real form submission is a hard, full-document
+ * navigation, which is what was producing an unexpected full-page reload
+ * (and, on some browsers, a "confirm form resubmission" prompt on the
+ * back button) every time someone signed out. fetch() still hits the
+ * exact same route handler and gets the same Set-Cookie clearing the
+ * session; only the navigation afterward is a normal Next.js transition.
  */
 export function SidebarFooter({ user }: { user: AccountUser }) {
   const { collapsed } = useSidebar();
-  const logoutFormRef = useRef<HTMLFormElement>(null);
-  const signOut = () => logoutFormRef.current?.requestSubmit();
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      const res = await fetch("/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error(`Sign out failed (${res.status})`);
+      router.push("/");
+      router.refresh();
+    } catch {
+      toast.error(
+        "Couldn't sign out. Please check your connection and try again."
+      );
+      setSigningOut(false);
+    }
+  }
 
   return (
     <div className="mt-auto">
@@ -51,6 +77,7 @@ export function SidebarFooter({ user }: { user: AccountUser }) {
                   variant="ghost"
                   size="icon"
                   onClick={signOut}
+                  disabled={signingOut}
                   className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
                   <LogOut className="h-4 w-4" />
@@ -64,12 +91,6 @@ export function SidebarFooter({ user }: { user: AccountUser }) {
           </Tooltip>
         )}
       </div>
-      <form
-        ref={logoutFormRef}
-        action="/auth/logout"
-        method="POST"
-        className="hidden"
-      />
     </div>
   );
 }

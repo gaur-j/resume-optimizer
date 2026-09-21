@@ -61,9 +61,13 @@ export const metadata: Metadata = {
   authors: [{ name: "Resume AI Optimizer" }],
   creator: "Resume AI Optimizer",
   publisher: "Resume AI Optimizer",
-  alternates: {
-    canonical: APP_URL,
-  },
+  // NOTE: no blanket `alternates.canonical` here. Metadata set at this
+  // (root) level is inherited by every route that doesn't override it, so
+  // a canonical pointing at APP_URL was previously being applied to every
+  // page in the app - /auth/login, /dashboard, etc. - all incorrectly
+  // self-canonicalizing to the homepage. Canonical is instead set per-page
+  // (see app/page.tsx for the homepage; add it to any other page that
+  // should be indexed under its own URL).
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -130,7 +134,7 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', { send_page_view: false });
               `}
               </Script>
             </>

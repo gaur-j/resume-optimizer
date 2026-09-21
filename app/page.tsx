@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
@@ -49,12 +50,81 @@ const CATEGORIES = [
   },
 ];
 
+// This is the actual homepage, so (unlike the root layout, which must not
+// force the same canonical onto every page) it's correct to declare its
+// own canonical here.
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
+
+// Structured data describing the product and its real, current pricing.
+// Kept in sync by hand with the pricing cards below - update both together.
+// No aggregateRating/review fields: we don't have real review data, and
+// fabricating one would violate Google's structured data guidelines.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      name: "Get Resume AI",
+      url: "https://getresume-ai.vercel.app/",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "AI-powered ATS resume checker: get an ATS score, keyword gap analysis, and AI resume rewrites.",
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Free",
+          price: "0",
+          priceCurrency: "INR",
+          description: "3 resume scans with full ATS score breakdown.",
+        },
+        {
+          "@type": "Offer",
+          name: "1 Scan",
+          price: "99",
+          priceCurrency: "INR",
+          description: "1 resume scan with AI bullet point rewrites.",
+        },
+        {
+          "@type": "Offer",
+          name: "5 Scans",
+          price: "249",
+          priceCurrency: "INR",
+          description: "5 resume scans with AI bullet point rewrites.",
+        },
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      // Mirrors the FAQ accordion actually rendered further down this
+      // page - required by Google's structured data guidelines, and kept
+      // as the single source of truth (FAQS) so the two can't drift.
+      mainEntity: FAQS.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.a,
+        },
+      })),
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <AuthModalProvider>
       {/* overflow-x-hidden guards against the rotated hero card/stamp
           causing a horizontal scrollbar at narrow mobile widths */}
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 overflow-x-hidden">
+        <script
+          type="application/ldjson"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         {/* Navigation */}
         <nav className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex justify-between items-center">
@@ -148,16 +218,16 @@ export default function Home() {
                   </p>
                   <div className="border-l-2 border-approved bg-approved/10 pl-3 py-2 rounded-r-md">
                     <p className="text-foreground text-xs sm:text-sm leading-relaxed">
-                      Led React frontend development for 3+ customer-facing
-                      apps, cutting page load time by 40%
+                      Led React frontend development for 3 customer-facing apps,
+                      cutting page load time by 40%
                     </p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="text-[10px] sm:text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
-                      +quantified impact
+                      quantified impact
                     </span>
                     <span className="text-[10px] sm:text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
-                      +action verb
+                      action verb
                     </span>
                   </div>
                 </div>
@@ -306,7 +376,7 @@ export default function Home() {
                   After
                 </div>
                 <p className="text-foreground leading-relaxed">
-                  Led React frontend development for 3+ customer-facing web
+                  Led React frontend development for 3 customer-facing web
                   applications, improving page load times by 40%
                 </p>
               </div>

@@ -25,6 +25,33 @@ declare global {
  * source of page_view events - including for the first page load - which
  * avoids double-counting the landing page.
  */
+// Query params that can carry a one-time auth token, session code, or
+// other secret - e.g. the `code` on a PKCE OAuth/password-recovery
+// redirect, or a `token_hash` on an email verification link. These should
+// never leave the browser in an analytics payload, even transiently while
+// a page like /auth/callback is loading. Defense in depth: the reset-
+// password flow no longer exposes `code` in its URL at all (it's
+// exchanged server-side in /auth/callback before the browser ever lands
+// on a page that loads this component), but this redacts the param by
+// name regardless of which page it shows up on.
+const SENSITIVE_PARAMS = [
+  "code",
+  "token",
+  "token_hash",
+  "access_token",
+  "refresh_token",
+];
+
+/** Redacts any sensitive param values in-place and returns the same URL. */
+function redactSensitiveParams(url: URL): URL {
+  for (const param of SENSITIVE_PARAMS) {
+    if (url.searchParams.has(param)) {
+      url.searchParams.set(param, "redacted");
+    }
+  }
+  return url;
+}
+
 function TrackPageViewsInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -34,7 +61,8 @@ function TrackPageViewsInner() {
       return;
     }
 
-    const query = searchParams.toString();
+    const url = redactSensitiveParams(new URL(window.location.href));
+    const query = url.searchParams.toString();
     const page_path = query ? `${pathname}?${query}` : pathname;
 
     // Sent as a plain event, not a repeated `config` call, so it flows
@@ -43,7 +71,7 @@ function TrackPageViewsInner() {
     // re-running configuration side effects on every navigation.
     window.gtag("event", "page_view", {
       page_path,
-      page_location: window.location.href,
+      page_location: url.toString(),
       page_title: document.title,
     });
   }, [pathname, searchParams]);

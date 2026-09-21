@@ -48,7 +48,10 @@ export function MobileSidebar({ user }: { user: AccountUser }) {
 
               <Separator className="bg-border/60" />
 
-              <ScrollArea className="flex-1 px-3 py-3">
+              {/* min-h-0: same fix as the desktop rail (app-sidebar.tsx) -
+                  without it this flex-1 area can grow past the drawer's
+                  available height and push SidebarFooter out of view. */}
+              <ScrollArea className="min-h-0 flex-1 px-3 py-3">
                 <nav
                   className="flex flex-col gap-1"
                   onClick={() => setOpen(false)}

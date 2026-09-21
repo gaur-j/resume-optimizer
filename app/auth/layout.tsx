@@ -1,4 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// Login/signup/password-reset/logout/OAuth-callback are all transactional
+// utility flows with no unique content to rank, and reset-password in
+// particular briefly carries a one-time token in its URL - none of this
+// tree should be indexed regardless of the root layout's default.
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AuthLayout({
   children,
