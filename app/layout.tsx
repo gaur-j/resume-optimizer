@@ -117,6 +117,10 @@ export default function RootLayout({
       className={cn("font-sans", plexMono.variable, plexSans.variable)}
       suppressHydrationWarning
     >
+      <meta
+        name="google-site-verification"
+        content="7NX4-4tG49fRmfB3lFoNUgV3rn92WgyNvFhvspVkULk"
+      />
       <head>
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
