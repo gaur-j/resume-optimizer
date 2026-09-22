@@ -67,7 +67,23 @@ const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "WebSite",
+      "@id": "https://getresume-ai.vercel.app/#website",
+      // Explicit site-identity signal, separate from (but consistent with)
+      // the og:site_name meta tag. Google's entity-resolution systems can
+      // weigh this independently of Open Graph tags, particularly for the
+      // "site name" shown in search results - which is otherwise prone to
+      // defaulting to the hosting platform's own brand on a shared
+      // subdomain like this one. This alone won't force that override; a
+      // custom domain remains the reliable fix for that specific issue.
+      name: "Get Resume AI",
+      alternateName: "Resume AI Optimizer",
+      url: "https://getresume-ai.vercel.app/",
+      inLanguage: "en",
+    },
+    {
       "@type": "WebApplication",
+      isPartOf: { "@id": "https://getresume-ai.vercel.app/#website" },
       name: "Get Resume AI",
       url: "https://getresume-ai.vercel.app/",
       applicationCategory: "BusinessApplication",
@@ -114,7 +130,6 @@ const structuredData = {
     },
   ],
 };
-
 export default function Home() {
   return (
     <AuthModalProvider>
@@ -122,7 +137,7 @@ export default function Home() {
           causing a horizontal scrollbar at narrow mobile widths */}
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 overflow-x-hidden">
         <script
-          type="application/ldjson"
+          type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         {/* Navigation */}
