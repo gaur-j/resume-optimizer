@@ -45,6 +45,21 @@ export const metadata: Metadata = {
   description:
     "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes. | Boost your interview chances with AI. Get a free ATS resume score, keyword analysis, resume rewrites in under 2 minutes.",
   keywords: [
+    "GeT Resume AI",
+    "get resume ai",
+    "getresume-ai",
+    "get-resume-ai",
+    "get resumeai",
+    "get resume ai optimizer",
+    "get resume",
+    "resume ai",
+    "get resume ai analyzer",
+    "get resume-ai analyzer",
+    "get resume-ai optimizer",
+    "Get resume ai",
+    "get resume AI",
+    "get resume AI optimizer",
+    "GeT resume AI",
     "ATS resume checker",
     "AI resume builder",
     "resume optimizer",
@@ -58,9 +73,9 @@ export const metadata: Metadata = {
     "resume scanner",
     "career tools",
   ],
-  authors: [{ name: "Resume AI Optimizer" }],
-  creator: "Resume AI Optimizer",
-  publisher: "Resume AI Optimizer",
+  authors: [{ name: "Get Resume AI" }],
+  creator: "Get Resume AI",
+  publisher: "Get Resume AI",
   // NOTE: no blanket `alternates.canonical` here. Metadata set at this
   // (root) level is inherited by every route that doesn't override it, so
   // a canonical pointing at APP_URL was previously being applied to every
@@ -73,8 +88,7 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: APP_URL,
     siteName: "Get Resume AI",
-    title:
-      "Resume AI Optimizer | Check Your ATS Score Free | Free ATS Resume Score Checker",
+    title: "Get Resume AI Optimizer -- Check Your ATS Score Free",
     description:
       "Analyze your resume with AI, discover missing ATS keywords, improve weak bullet points, and increase your chances of landing interviews.",
     images: [
@@ -88,7 +102,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resume AI Optimizer | Free ATS Resume Score Checker",
+    title: "Get Resume AI Optimizer -- Free ATS Resume Score Checker",
     description: "Get an ATS score, keyword analysis, AI resume rewrites.",
     images: ["/og-image.png"],
   },
