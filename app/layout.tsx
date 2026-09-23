@@ -34,13 +34,12 @@ const isProductionDeployment = process.env.VERCEL_ENV
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   icons: {
-    icon: "/site.ico",
-    shortcut: "/site.ico",
+    icon: "/site.svg",
+    shortcut: "/site.svg",
   },
   title: {
-    default: "Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
-    template:
-      "%s | Resume AI Optimizer | ATS Score Checker | Free ATS Resume Score",
+    default: "Get Resume AI Optimizer - Free ATS Resume Score",
+    template: "%s | Get Resume AI Optimizer -- Check Your ATS Score Free",
   },
   description:
     "Find out why ATS bots are rejecting your resume. Get a free ATS score, keyword analysis, and AI-powered rewrites in under 2 minutes. | Boost your interview chances with AI. Get a free ATS resume score, keyword analysis, resume rewrites in under 2 minutes.",
