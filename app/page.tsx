@@ -67,6 +67,13 @@ const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Organization",
+      "@id": "https://getresume-ai.vercel.app/#organization",
+      name: "Get Resume AI",
+      url: "https://getresume-ai.vercel.app/",
+      logo: "https://getresume-ai.vercel.app/site.svg",
+    },
+    {
       "@type": "WebSite",
       "@id": "https://getresume-ai.vercel.app/#website",
       // Explicit site-identity signal, separate from (but consistent with)
@@ -79,6 +86,7 @@ const structuredData = {
       name: "Get Resume AI",
       alternateName: "Resume AI Optimizer",
       url: "https://getresume-ai.vercel.app/",
+      publisher: { "@id": "https://getresume-ai.vercel.app/#organization" },
       inLanguage: "en",
     },
     {

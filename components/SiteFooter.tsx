@@ -3,9 +3,9 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="border-t border-border py-8 bg-card">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foregroun">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-muted-foregroun">
         <span className="text-primary">
-          © 2026 Resume AI Optimizer. Made for Indian job seekers.
+          © 2026 Get Resume AI. Made for job seekers.
         </span>
         <nav className="flex items-center gap-4">
           <Link
