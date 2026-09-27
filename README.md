@@ -8,7 +8,7 @@ AI-powered resume optimizer that tailors your resume to specific job description
 
 Upload your resume, paste a job description, and get an ATS-friendly, role-specific version designed to improve readability and recruiter visibility.
 
-[Live Demo](https://ai-resum-optimizer.vercel.app/) · [Troubleshooting](docs/troubleshooting/pdf-parse-vercel-fix.md) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
+[Live Demo](https://getresume-ai.vercel.app/) · [Troubleshooting](docs/troubleshooting/pdf-parse-vercel-fix.md) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
 ---
 
@@ -161,12 +161,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-Never commit `.env.local` or expose your Supabase service role key publicly.
-
-See the example environment file:
-
-[.env.example](.env.example)
-
 ### Run locally
 
 ```bash
@@ -191,14 +185,12 @@ Planned pricing features:
 
 - Limited resume optimizations
 - Basic tailoring
-- Standard export
 
 ### Pro
 
 - Unlimited optimizations
 - Advanced AI rewrites
 - Resume history
-- Premium export options
 
 ---
 
@@ -206,31 +198,31 @@ Planned pricing features:
 
 ## Phase 1 — MVP
 
-- [x] Resume upload
-- [x] Job description input
-- [x] AI optimization
-- [x] Export flow
+- [y] Resume upload
+- [y] Job description input
+- [y] AI optimization
+- [y] Export flow
 
 ## Phase 2 — Product polish
 
-- [ ] Resume history
-- [ ] ATS scoring
-- [ ] Better UI/UX
-- [ ] Saved sessions
+- [y] ATS scoring
+- [y] Better UI/UX
+- [y] Free tier limits
+- [y] Pro subscription
 
 ## Phase 3 — Monetization
 
-- [ ] Free tier limits
-- [ ] Pro subscription
-- [ ] Payment integration
-- [ ] Usage analytics
+- [y] Payment integration
+- [y] Usage analytics
+- [x] Resume history
+- [x] Saved sessions
 
 ## Phase 4 — Expansion
 
-- [ ] Cover letters
-- [ ] LinkedIn optimization
-- [ ] Application tracker
-- [ ] Recruiter tools
+- [x] Cover letters
+- [x] LinkedIn optimization
+- [x] Application tracker
+- [x] Recruiter tools
 
 ---
 
