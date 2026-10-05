@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import {
+  CheckIcon,
+  ChevronDown,
+  FileSearch,
+  Gauge,
+  LayoutTemplate,
+  Target,
+  Wrench,
+} from "lucide-react";
+
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
 import { SiteFooter } from "@/components/SiteFooter";
-import { ChevronDown } from "lucide-react";
-import { CheckIcon } from "lucide-react";
-import { FileSearch } from "lucide-react";
 import { ATSPreview } from "@/components/marketing/ATSPreview";
 
 const FAQS = [
@@ -29,40 +36,51 @@ const FAQS = [
 
 const CATEGORIES = [
   {
-    icon: "🎯",
+    icon: Target,
     title: "Keywords",
     desc: "Do you have the exact terms this job description is scanning for?",
   },
   {
-    icon: "💼",
+    icon: Gauge,
     title: "Experience",
     desc: "Are your achievements quantified and relevant to the role?",
   },
   {
-    icon: "📐",
+    icon: LayoutTemplate,
     title: "Formatting",
     desc: "Will ATS software actually be able to parse your resume?",
   },
   {
-    icon: "🛠️",
+    icon: Wrench,
     title: "Skills",
     desc: "Do your listed skills match what recruiters are filtering for?",
   },
 ];
 
-// This is the actual homepage, so (unlike the root layout, which must not
-// force the same canonical onto every page) it's correct to declare its
-// own canonical here.
+const STEPS = [
+  {
+    step: "01",
+    title: "Upload your resume",
+    desc: "Drop your PDF and paste the job description you are targeting.",
+  },
+  {
+    step: "02",
+    title: "Get your ATS score",
+    desc: "See how ATS software reads your resume — with a clear breakdown.",
+  },
+  {
+    step: "03",
+    title: "Apply AI rewrites",
+    desc: "Copy stronger bullets and export a tailored resume in minutes.",
+  },
+];
+
 export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
 };
 
-// Structured data describing the product and its real, current pricing.
-// Kept in sync by hand with the pricing cards below - update both together.
-// No aggregateRating/review fields: we don't have real review data, and
-// fabricating one would violate Google's structured data guidelines.
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -76,13 +94,6 @@ const structuredData = {
     {
       "@type": "WebSite",
       "@id": "https://getresume-ai.vercel.app/#website",
-      // Explicit site-identity signal, separate from (but consistent with)
-      // the og:site_name meta tag. Google's entity-resolution systems can
-      // weigh this independently of Open Graph tags, particularly for the
-      // "site name" shown in search results - which is otherwise prone to
-      // defaulting to the hosting platform's own brand on a shared
-      // subdomain like this one. This alone won't force that override; a
-      // custom domain remains the reliable fix for that specific issue.
       name: "Get Resume AI",
       alternateName: "Resume AI Optimizer",
       url: "https://getresume-ai.vercel.app/",
@@ -124,9 +135,6 @@ const structuredData = {
     },
     {
       "@type": "FAQPage",
-      // Mirrors the FAQ accordion actually rendered further down this
-      // page - required by Google's structured data guidelines, and kept
-      // as the single source of truth (FAQS) so the two can't drift.
       mainEntity: FAQS.map((item) => ({
         "@type": "Question",
         name: item.q,
@@ -138,32 +146,32 @@ const structuredData = {
     },
   ],
 };
+
 export default function Home() {
   return (
     <AuthModalProvider>
-      {/* overflow-x-hidden guards against the rotated hero card/stamp
-          causing a horizontal scrollbar at narrow mobile widths */}
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 overflow-x-hidden">
+      <div className="min-h-screen overflow-x-hidden bg-background">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+
         {/* Navigation */}
-        <nav className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex justify-between items-center">
-            <div className="font-bold text-lg sm:text-2xl tracking-tight">
+        <nav className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md supports-backdrop-filter:bg-background/75">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5 lg:px-8">
+            <div className="text-lg font-bold tracking-tight sm:text-xl">
               Resume<span className="text-primary">AI</span>
             </div>
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <NavAuthLink
                 mode="login"
-                className="px-3 sm:px-6 lg:px-8 py-2 text-muted-foreground hover:text-primary/90 text-xs sm:text-sm font-medium font-mono"
+                className="px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-4 sm:text-sm"
               >
                 Log in
               </NavAuthLink>
               <AuthCTAButton
                 mode="signup"
-                className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all duration-300 font-medium font-mono text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
+                className="h-9 rounded-lg bg-primary px-3 text-xs font-semibold shadow-sm transition-colors hover:bg-primary/90 sm:h-10 sm:px-4 sm:text-sm"
               >
                 <span className="hidden sm:inline">Get Started Free</span>
                 <span className="sm:hidden">Start Free</span>
@@ -174,161 +182,149 @@ export default function Home() {
         </nav>
 
         {/* Hero */}
-        <section className="relative overflow-hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 sm:pt-16 sm:pb-20">
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="h-72 w-72 rounded-full bg-primary/20 blur-[90px]" />
-          </div>
-          {/* Background Grid */}
+        <section className="relative overflow-hidden">
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-20 opacity-[0.03] dark:opacity-[0.05]"
-            style={{
-              backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-              backgroundSize: "48px 48px",
-            }}
-          />
+            className="pointer-events-none absolute inset-0 -z-10"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_55%)]" />
+            <div
+              className="absolute inset-0 opacity-[0.04]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+                backgroundSize: "56px 56px",
+              }}
+            />
+          </div>
 
-          {/* Background Glow */}
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-[120px] -z-10" />
-          {/* Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="text-center sm:text-left mt-4 sm:mt-0">
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[10px] sm:text-xs font-mono uppercase tracking-wider px-3 py-1.5 rounded-full mb-6">
-                <span className="w-1.5 h-1.5 bg-primary rounded-full" />
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 sm:gap-12 sm:px-6 sm:pb-20 sm:pt-16 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:pt-20">
+            <div className="text-center sm:text-left">
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-medium text-primary sm:text-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 Built for Indian job seekers
-              </div>
-              <h1 className="font-mono text-[28px] sm:text-5xl lg:text-6xl text-pretty font-semibold text-foreground mb-4 sm:mb-6 leading-tight tracking-tight">
+              </p>
+
+              <h1 className="text-balance font-mono text-[1.75rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
                 Find out why ATS bots are rejecting your resume
               </h1>
-              <p className="text-sm sm:text-lg leading-relaxed text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto sm:mx-0">
+
+              <p className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-relaxed text-muted-foreground sm:mx-0 sm:mt-5 sm:text-lg sm:leading-7">
                 Upload your resume and a job description. Get a real ATS score,
-                missing keywords, and AI-rewritten bullet points — in under 2
-                minutes, free.
+                missing keywords, and AI-rewritten bullets — in under 2 minutes.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+
+              <div className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-start">
                 <a
                   href="#free-ats-check"
-                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary/80 px-5 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:from-primary/90 hover:to-primary sm:w-auto"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-md transition-colors hover:bg-primary/90"
                 >
-                  <FileSearch className="mr-2 h-4 w-4" />
-                  Check My Resume — Free →
+                  <FileSearch className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Check My Resume — Free
                 </a>
               </div>
-              <div className="mt-4 space-y-2">
-                <p className="text-[10px] sm:text-xs font-mono text-muted-foreground mt-4 leading-relaxed">
-                  Free ATS Scan • 2 min report • No Card required
-                </p>
-              </div>
+
+              <p className="mt-4 text-xs text-muted-foreground sm:text-sm">
+                3 free scans · No card required · Results in ~2 minutes
+              </p>
             </div>
 
-            {/* Signature: a resume snippet under audit, with a real
-                correction and a stamped score — this is what the
-                product actually does, shown rather than illustrated.
-                Purely illustrative and already described in the prose
-                above, so it's hidden from assistive tech to avoid
-                announcing an out-of-context "78 ATS score". */}
+            {/* Product preview */}
             <div
               aria-hidden="true"
-              className="relative motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 scale-95 sm:scale-100 mt-6 sm:mt-0"
+              className="relative mx-auto w-full max-w-md motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-700 lg:max-w-none"
             >
-              <div className="rounded-3xl p-[1px] bg-gradient-to-br from-primary/40 via-border to-primary/20">
-                <div className="relative rounded-3xl bg-card shadow-sm transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl p-5 sm:p-6 -rotate-1">
-                  <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-3 sm:mb-4 border-b divide-y pb-2 sm:pb-3">
-                    Eudaction —
-                  </div>
-                  <p className="text-muted-foreground/70 line-through decoration-correction decoration-2 mb-4 text-xs sm:text-sm leading-relaxed">
-                    Worked on React projects for the team
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-(--shadow-md) sm:p-6">
+                <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Resume audit
+                  </span>
+                  <span className="rounded-md bg-approved/10 px-2 py-0.5 text-[11px] font-medium text-approved">
+                    Live preview
+                  </span>
+                </div>
+
+                <p className="mb-3 text-sm text-muted-foreground/70 line-through decoration-correction decoration-2">
+                  Worked on React projects for the team
+                </p>
+
+                <div className="rounded-xl border border-approved/25 bg-approved/8 p-3">
+                  <p className="text-sm leading-relaxed text-foreground">
+                    Led React frontend development for 3 customer-facing apps,
+                    cutting page load time by 40%
                   </p>
-                  <div className="border-l-2 border-approved bg-approved/10 pl-3 py-2 rounded-r-md">
-                    <p className="text-foreground text-xs sm:text-sm leading-relaxed">
-                      Led React frontend development for 3 customer-facing apps,
-                      cutting page load time by 40%
-                    </p>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="text-[10px] sm:text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
-                      quantified impact
-                    </span>
-                    <span className="text-[10px] sm:text-[11px] font-mono bg-secondary text-secondary-foreground px-2 py-1 rounded">
-                      action verb
-                    </span>
-                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
+                    quantified impact
+                  </span>
+                  <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
+                    action verb
+                  </span>
+                  <span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
+                    ATS keywords
+                  </span>
                 </div>
               </div>
 
-              {/* Score stamp */}
-              <div className="absolute -top-4 -right-2 sm:-top-7 sm:-right-5 rotate-[8deg] motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-700 motion-safe:delay-300 motion-safe:fill-mode-both">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-background border-[3px] border-approved shadow-xl flex flex-col items-center justify-center animate-pulse">
-                  <span className="font-mono text-xl sm:text-2xl font-bold text-approved leading-none">
+              <div className="absolute -right-2 -top-4 sm:-right-4 sm:-top-5">
+                <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-approved bg-background shadow-(--shadow-md) sm:h-20 sm:w-20">
+                  <span className="font-mono text-xl font-bold leading-none text-approved sm:text-2xl">
                     78
                   </span>
-                  <span className="font-mono text-[7px] sm:text-[10px] tracking-widest text-approved mt-1">
-                    ATS SCORE
+                  <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wider text-approved sm:text-[9px]">
+                    ATS score
                   </span>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Trust bar */}
+        <section className="border-y border-border bg-secondary/50">
+          <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 px-4 py-4 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-2 sm:py-5 sm:text-sm">
+            {[
+              "Works with LinkedIn, Naukri, Indeed",
+              "No data sold or shared",
+              "Built by a student, for students",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <CheckIcon
+                  className="h-3.5 w-3.5 shrink-0 text-approved"
+                  aria-hidden="true"
+                />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
         </section>
 
         <ATSPreview />
 
-        {/* Trust bar */}
-        <section className="border-y border-border/50 bg-secondary py-4 sm:py-6">
-          <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row flex-wrap justify-center items-center gap-x-6 lg:gap-x-10 gap-y-2 text-xs sm:text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-              <span>LinkedIn, Naukri, Indeed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-              <span>No data stored beyond your account</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-              <span>Built by a student, for students</span>
-            </div>
-          </div>
-        </section>
-
         {/* How it works */}
-        <section className="py-10 sm:py-20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-            <h2 className="font-mono text-2xl font-semibold tracking-tight text-center text-foreground mb-2 text-pretty">
-              How it works
-            </h2>
-            <p className="text-center text-sm sm:text-base text-muted-foreground mb-8 sm:mb-12 leading-relaxed">
-              Three steps, no downloads to see your score
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-              {[
-                {
-                  step: "1",
-                  title: "Upload your resume",
-                  desc: "Drop your resume and the job description.",
-                },
-                {
-                  step: "2",
-                  title: "Get your ATS score",
-                  desc: "See exactly how ATS software reads your resume.",
-                },
-                {
-                  step: "3",
-                  title: "Fix it in one click",
-                  desc: "Copy AI-rewritten bullets that add missing metrics.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className="text-center flex flex-col items-center"
-                >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-base sm:text-lg font-mono font-semibold mb-3 sm:mb-4">
+        <section className="py-14 sm:py-20">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                How it works
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Three steps from upload to a tailored resume
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-6 sm:mt-12 md:grid-cols-3 md:gap-8">
+              {STEPS.map((item) => (
+                <div key={item.step} className="text-center md:text-left">
+                  <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-semibold text-primary md:mx-0">
                     {item.step}
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1 sm:mb-2">
+                  <h3 className="text-base font-semibold text-foreground">
                     {item.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-[250px] sm:max-w-none">
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                     {item.desc}
                   </p>
                 </div>
@@ -337,68 +333,76 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Category breakdown — inspired by how leading CheckIconers present scoring */}
-        <section className="bg-secondary py-10 sm:py-20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-            <h2 className="font-mono text-xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-center text-foreground mb-2 text-pretty">
-              One score isn&apos;t enough — so we don&apos;t give you just one
-            </h2>
-            <p className="text-center text-xs sm:text-base text-muted-foreground mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
-              Your score breaks down into four categories, so you know exactly
-              what to fix instead of guessing.
-            </p>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {CATEGORIES.map((cat) => (
-                <div
-                  key={cat.title}
-                  className="bg-card rounded-2xl sm:rounded-3xl border-border p-3 sm:p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
+        {/* Score categories */}
+        <section className="border-y border-border bg-secondary/40 py-14 sm:py-20">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                One score isn&apos;t enough
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Your result breaks into four categories so you know exactly what
+                to fix.
+              </p>
+            </div>
+
+            <div className="mt-10 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-4 lg:grid-cols-4">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                return (
                   <div
-                    className="text-xl sm:text-2xl mb-2 sm:mb-4 flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-primary/10"
-                    aria-hidden="true"
+                    key={cat.title}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-(--shadow-xs) sm:p-5"
                   >
-                    {cat.icon}
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-10 sm:w-10">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground sm:text-base">
+                      {cat.title}
+                    </h3>
+                    <p className="mt-1 hidden text-xs leading-relaxed text-muted-foreground sm:block sm:text-sm">
+                      {cat.desc}
+                    </p>
                   </div>
-                  <h3 className="text-sm sm:text-base font-semibold text-foreground mb-1 text-pretty">
-                    {cat.title}
-                  </h3>
-                  <p className="hidden sm:block text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    {cat.desc}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* Before / After */}
-        <section className="py-10 sm:py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8">
-            <h2 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-semibold text-center text-foreground mb-2 tracking-tight text-pretty">
-              See the difference
-            </h2>
-            <p className="text-center text-muted-foreground mb-12 leading-relaxed">
-              Real example of an AI-rewritten bullet point
-            </p>
-            <div className="space-y-4">
-              <div className="border border-border rounded-3xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div className="text-xs font-mono font-medium text-muted-foreground uppercase tracking-widest mb-2 ">
+        <section className="py-14 sm:py-20">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6">
+            <div className="text-center">
+              <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                See the difference
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Real example of an AI-rewritten bullet point
+              </p>
+            </div>
+
+            <div className="mt-8 space-y-3 sm:mt-10">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-(--shadow-xs)">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   Before
-                </div>
-                <p className="text-muted-foreground/70 line-through decoration-correction decoration-2 leading-relaxed">
+                </p>
+                <p className="text-sm text-muted-foreground/70 line-through decoration-correction decoration-2 sm:text-base">
                   Worked on React projects for the team
                 </p>
               </div>
+
               <div className="flex justify-center" aria-hidden="true">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                   ↓
                 </div>
               </div>
-              <div className="border-l-2 border-approved bg-approved/10 rounded-r-3xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div className="text-xs font-mono font-medium text-approved uppercase tracking-widest mb-2">
+
+              <div className="rounded-2xl border border-approved/30 bg-approved/8 p-5">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-approved">
                   After
-                </div>
-                <p className="text-foreground leading-relaxed">
+                </p>
+                <p className="text-sm leading-relaxed text-foreground sm:text-base">
                   Led React frontend development for 3 customer-facing web
                   applications, improving page load times by 40%
                 </p>
@@ -408,66 +412,90 @@ export default function Home() {
         </section>
 
         {/* Pricing */}
-        <section className="bg-secondary py-10 sm:py-20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-            <h2 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-center text-pretty text-foreground mb-2">
-              Simple, honest pricing
-            </h2>
-            <p className="text-center text-sm sm:text-base text-muted-foreground mb-8 sm:mb-12 leading-relaxed">
-              No subscriptions. Pay only when you need more scans.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-              <div className="bg-card border-border shadow-sm rounded-3xl p-5 sm:p-6">
-                <h3 className="font-semibold text-foreground mb-1">Free</h3>
-                <div className="font-mono text-2xl sm:text-4xl font-semibold text-foreground mb-4">
+        <section className="border-y border-border bg-secondary/40 py-14 sm:py-20">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                Simple, honest pricing
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                No subscriptions. Pay only when you need more scans.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-4 sm:mt-12 md:grid-cols-3 md:gap-5">
+              {/* Free */}
+              <div className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-(--shadow-xs)">
+                <h3 className="text-sm font-semibold text-foreground">Free</h3>
+                <div className="mt-2 font-mono text-3xl font-semibold text-foreground sm:text-4xl">
                   ₹0
                 </div>
-                <ul className="text-xs sm:text-sm text-muted-foreground space-y-2 sm:space-y-3 mb-6">
-                  <li>✓ 3 resume scans</li>
-                  <li>✓ Full ATS score breakdown</li>
+                <ul className="mt-5 flex-1 space-y-2.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    3 resume scans
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    Full ATS score breakdown
+                  </li>
                 </ul>
                 <AuthCTAButton
                   mode="signup"
                   variant="outline"
-                  className="w-full"
+                  className="mt-6 w-full rounded-xl"
                 >
                   Start free
                 </AuthCTAButton>
               </div>
-              <div className="bg-card scale-105 ring-2 ring-primary/40 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl rounded-3xl p-5 sm:p-6 relative mt-4 md:mt-0">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary shadow-md hover:shadow-lg transition-all text-primary-foreground text-[10px] sm:text-xs font-medium px-3 py-1 rounded-full">
+
+              {/* Popular */}
+              <div className="relative flex flex-col rounded-2xl border-2 border-primary bg-card p-6 shadow-(--shadow-md)">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
                   Most popular
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">5 Scans</h3>
-                <div className="font-mono text-2xl sm:text-4xl font-semibold text-foreground mb-4">
+                </span>
+                <h3 className="text-sm font-semibold text-foreground">5 Scans</h3>
+                <div className="mt-2 font-mono text-3xl font-semibold text-foreground sm:text-4xl">
                   ₹249
                 </div>
-                <div className="bg-card rounded-3xl md:scale-105 transition-transform">
-                  <ul className="text-xs sm:text-sm text-muted-foreground space-y-2 sm:space-y-3 mb-6">
-                    <li>✓ 5 resume scans</li>
-                    <li>✓ AI bullet point rewrites</li>
-                  </ul>
-                </div>
+                <ul className="mt-5 flex-1 space-y-2.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    5 resume scans
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    AI bullet point rewrites
+                  </li>
+                </ul>
                 <AuthCTAButton
                   mode="signup"
-                  className="w-full bg-primary hover:bg-primary/90"
+                  className="mt-6 w-full rounded-xl bg-primary hover:bg-primary/90"
                 >
                   Get 5 scans
                 </AuthCTAButton>
               </div>
-              <div className="bg-card border-border shadow-sm rounded-3xl p-5 sm:p-6 mt-2 sm:mt-0">
-                <h3 className="font-semibold text-foreground mb-1">1 Scan</h3>
-                <div className="font-mono text-2xl sm:text-4xl font-semibold text-foreground mb-4">
+
+              {/* Single */}
+              <div className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-(--shadow-xs)">
+                <h3 className="text-sm font-semibold text-foreground">1 Scan</h3>
+                <div className="mt-2 font-mono text-3xl font-semibold text-foreground sm:text-4xl">
                   ₹99
                 </div>
-                <ul className="text-xs sm:text-sm text-muted-foreground space-y-2 sm:space-y-3 mb-6">
-                  <li>✓ 1 resume scan</li>
-                  <li>✓ AI bullet point rewrites</li>
+                <ul className="mt-5 flex-1 space-y-2.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    1 resume scan
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-approved" />
+                    AI bullet point rewrites
+                  </li>
                 </ul>
                 <AuthCTAButton
                   mode="signup"
                   variant="outline"
-                  className="w-full"
+                  className="mt-6 w-full rounded-xl"
                 >
                   Buy 1 scan
                 </AuthCTAButton>
@@ -476,29 +504,28 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ — native details/summary accordion: shortens the scroll on
-            mobile with zero client JS, and stays fully crawlable by
-            search engines and readable without JS if it ever fails to load. */}
-        <section className="py-10 sm:py-20">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-center text-foreground mb-12 text-pretty">
+        {/* FAQ */}
+        <section className="py-14 sm:py-20">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-center font-mono text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Frequently asked questions
             </h2>
-            <div className="space-y-2">
+
+            <div className="mt-8 space-y-1 sm:mt-10">
               {FAQS.map((item, idx) => (
                 <details
                   key={item.q}
                   open={idx === 0}
-                  className="group overflow-hidden border-b border-border py-3 sm:py-5 [&::-webkit-details-marker]:hidden"
+                  className="group border-b border-border py-4 sm:py-5 [&::-webkit-details-marker]:hidden"
                 >
-                  <summary className="font-semibold text-foreground cursor-pointer list-none flex items-center justify-between gap-3 sm:gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     {item.q}
                     <ChevronDown
                       aria-hidden="true"
-                      className="h-4 w-4 flex-shrink-0 text-muted-foreground group-open:rotate-180"
+                      className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
                     />
                   </summary>
-                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {item.a}
                   </p>
                 </details>
@@ -508,28 +535,25 @@ export default function Home() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-10 sm:py-20 bg-primary">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="font-mono text-xl sm:text-3xl font-semibold tracking-tight text-primary-foreground mb-3 sm:mb-4 text-pretty">
+        <section className="bg-primary py-14 sm:py-16">
+          <div className="mx-auto max-w-2xl px-4 text-center">
+            <h2 className="font-mono text-xl font-semibold tracking-tight text-primary-foreground sm:text-3xl">
               Get your ATS score now
             </h2>
-            <p className="text-xs sm:text-base text-primary-foreground/80 mb-6 sm:mb-8 leading-relaxed">
+            <p className="mt-2 text-sm text-primary-foreground/80 sm:text-base">
               3 free scans included. No credit card required.
             </p>
             <AuthCTAButton
               mode="signup"
               size="lg"
-              className="bg-background text-primary hover:bg-background/90 shadow-md text-sm sm:text-base w-full sm:w-auto"
+              className="mt-6 h-12 w-full rounded-xl bg-background text-sm font-semibold text-primary shadow-sm hover:bg-background/90 sm:w-auto sm:px-8"
             >
               Start Free Analysis →
             </AuthCTAButton>
           </div>
         </section>
 
-        {/* Footer */}
-        <div className="border-t border-border">
-          <SiteFooter />
-        </div>
+        <SiteFooter />
       </div>
     </AuthModalProvider>
   );

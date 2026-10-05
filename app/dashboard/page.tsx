@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { AlertCircle, CheckCircle2, FileSearch, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 
 import { CreditsCard } from "@/components/dashboard/CreditsCard";
-import { BuyCreditsModal } from "@/components/dashboard/BuyCreditsModal";
-import { AnalysisProgress } from "@/components/dashboard/AnalysisProgress";
-import { ResultsPanel } from "@/components/dashboard/ResultsPanel";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
-import { Suspense } from "react";
+import { ResultsPanelSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import { trackEvent } from "@/lib/analytics";
 import { NewUserTracker } from "@/components/analytics/NewUserTracker";
 
@@ -21,6 +19,28 @@ import type {
   BulletRewrite,
   TailoredResume,
 } from "@/types/analysis";
+
+const ResultsPanel = dynamic(
+  () =>
+    import("@/components/dashboard/ResultsPanel").then((m) => m.ResultsPanel),
+  { loading: () => <ResultsPanelSkeleton />, ssr: false }
+);
+
+const AnalysisProgress = dynamic(
+  () =>
+    import("@/components/dashboard/AnalysisProgress").then(
+      (m) => m.AnalysisProgress
+    ),
+  { ssr: false }
+);
+
+const BuyCreditsModal = dynamic(
+  () =>
+    import("@/components/dashboard/BuyCreditsModal").then(
+      (m) => m.BuyCreditsModal
+    ),
+  { ssr: false }
+);
 
 const supabase = createClient();
 
@@ -214,30 +234,27 @@ export default function DashboardPage() {
       <Suspense fallback={null}>
         <NewUserTracker />
       </Suspense>
-      {/* =====================================================
-          MOBILE / DESKTOP PAGE HEADER
-          ===================================================== */}
 
+      {/* Page header */}
       <section className="border-b border-border/70 bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
+            <div className="max-w-2xl">
+              <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-2.5 py-1 text-[11px] font-medium text-primary sm:text-xs">
                 <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 ATS Resume Analysis
               </div>
 
-              <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                Optimize your resume for the job.
+              <h1 className="text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+                Optimize your resume for the job
               </h1>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-[15px] sm:leading-7">
                 Upload your resume, paste the job description, and get an
                 actionable ATS analysis with AI-powered improvements.
               </p>
             </div>
 
-            {/* Desktop credits summary */}
             <div className="hidden w-full shrink-0 lg:block lg:w-72">
               <CreditsCard
                 credits={credits}
@@ -249,13 +266,9 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          MAIN WORKSPACE
-          ===================================================== */}
-
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-        {/* Mobile credits */}
-        <div className="mb-6 lg:hidden">
+      {/* Workspace */}
+      <section className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+        <div className="mb-5 lg:hidden">
           <CreditsCard
             credits={credits}
             loading={creditsLoading}
@@ -263,35 +276,28 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
-          {/* =================================================
-              PRIMARY WORKSPACE
-              ================================================= */}
-
-          <div className="min-w-0 space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0 space-y-5">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-(--shadow-xs)">
               <form onSubmit={handleAnalyze} aria-busy={loading}>
-                {/* Form header */}
-                <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
+                <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-5">
                   <div className="flex items-start gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <FileSearch className="h-4.5 w-4.5" aria-hidden="true" />
+                      <FileSearch className="h-4 w-4" aria-hidden="true" />
                     </div>
 
                     <div>
-                      <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                      <h2 className="text-base font-semibold text-foreground">
                         Start a new analysis
                       </h2>
-
-                      <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                      <p className="mt-0.5 text-sm text-muted-foreground">
                         Your resume and target job are analyzed together.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Form body */}
-                <div className="space-y-7 p-4 sm:p-6 lg:p-8">
+                <div className="space-y-6 p-4 sm:space-y-7 sm:p-6">
                   {/* Resume */}
                   <div>
                     <div className="mb-3 flex items-end justify-between gap-4">
@@ -299,12 +305,10 @@ export default function DashboardPage() {
                         <label className="text-sm font-semibold text-foreground">
                           1. Your resume
                         </label>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           Upload the latest version you want to improve.
                         </p>
                       </div>
-
                       <span className="hidden text-xs text-muted-foreground sm:block">
                         PDF · Max 5MB
                       </span>
@@ -319,17 +323,16 @@ export default function DashboardPage() {
                     />
 
                     {hasResume && (
-                      <div className="mt-3 flex items-center gap-2 text-xs text-success">
-                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      <div className="mt-2.5 flex items-center gap-2 text-xs text-success">
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                         Resume content is ready for analysis.
                       </div>
                     )}
                   </div>
 
-                  {/* Divider / step indicator */}
                   <div className="flex items-center gap-3" aria-hidden="true">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                       Next
                     </span>
                     <div className="h-px flex-1 bg-border" />
@@ -345,15 +348,14 @@ export default function DashboardPage() {
                         >
                           2. Target job description
                         </label>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           Paste the job posting you want to tailor your resume
                           for.
                         </p>
                       </div>
 
                       {hasJobDescription && (
-                        <span className="shrink-0 text-xs text-success">
+                        <span className="shrink-0 text-xs font-medium text-success">
                           Added
                         </span>
                       )}
@@ -364,15 +366,12 @@ export default function DashboardPage() {
                       value={jobDescription}
                       onChange={(e) => {
                         setJobDescription(e.target.value);
-
-                        if (error) {
-                          setError("");
-                        }
+                        if (error) setError("");
                       }}
                       placeholder="Paste the complete job description here..."
                       disabled={loading}
                       aria-describedby="job-description-help"
-                      className="min-h-[180px] resize-y rounded-xl border-border bg-background px-4 py-3 text-sm leading-6 sm:min-h-[220px] sm:text-base"
+                      className="min-h-[160px] resize-y rounded-xl border-border bg-background px-4 py-3 text-sm leading-6 sm:min-h-[200px]"
                     />
 
                     <div
@@ -382,41 +381,36 @@ export default function DashboardPage() {
                       <span>
                         Include responsibilities, requirements, and skills.
                       </span>
-
                       <span className="shrink-0 tabular-nums">
                         {jobDescription.length.toLocaleString()} chars
                       </span>
                     </div>
                   </div>
 
-                  {/* Error */}
                   {error && (
                     <div
                       role="alert"
                       aria-live="assertive"
-                      className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/8 p-4 text-sm text-destructive"
+                      className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/8 p-3.5 text-sm text-destructive"
                     >
                       <AlertCircle
                         className="mt-0.5 h-4 w-4 shrink-0"
                         aria-hidden="true"
                       />
-
                       <div>
                         <p className="font-medium">
                           We couldn&apos;t start the analysis
                         </p>
-
                         <p className="mt-1 leading-5 opacity-90">{error}</p>
                       </div>
                     </div>
                   )}
 
-                  {/* CTA */}
-                  <div className="border-t border-border pt-6">
+                  <div className="border-t border-border pt-5">
                     <Button
                       type="submit"
                       disabled={!canAnalyze || creditsLoading}
-                      className="h-12 w-full rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:h-13 sm:text-base"
+                      className="h-11 w-full rounded-xl text-sm font-semibold shadow-sm sm:h-12"
                     >
                       {loading ? (
                         <>
@@ -440,41 +434,32 @@ export default function DashboardPage() {
                       )}
                     </Button>
 
-                    {!hasResume || !hasJobDescription ? (
-                      <p className="mt-3 text-center text-xs text-muted-foreground">
-                        Add both inputs to unlock your ATS analysis.
-                      </p>
-                    ) : (
-                      <p className="mt-3 text-center text-xs text-muted-foreground">
-                        Your scan uses one available analysis credit.
-                      </p>
-                    )}
+                    <p className="mt-2.5 text-center text-xs text-muted-foreground">
+                      {!hasResume || !hasJobDescription
+                        ? "Add both inputs to unlock your ATS analysis."
+                        : "Your scan uses one available analysis credit."}
+                    </p>
                   </div>
                 </div>
               </form>
             </div>
 
-            {/* =================================================
-                ANALYSIS / RESULTS
-                ================================================= */}
-
+            {/* Results */}
             <div ref={resultsRef} className="scroll-mt-24" aria-live="polite">
               {loading && <AnalysisProgress />}
 
               {analysis && tailoredResume && !loading && (
-                <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
-                  <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
+                <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-(--shadow-xs)">
+                  <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-5">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success">
                         <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                       </div>
-
                       <div>
-                        <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                        <h2 className="text-base font-semibold text-foreground">
                           Your analysis is ready
                         </h2>
-
-                        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                        <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                           Review the recommendations below and accept the
                           changes you want to keep.
                         </p>
@@ -482,7 +467,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-6 lg:p-8">
+                  <div className="p-4 sm:p-6">
                     <ResultsPanel
                       atsAnalysis={analysis}
                       bulletRewrites={bulletRewrites}
@@ -499,37 +484,30 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* =================================================
-              CONTEXTUAL SIDEBAR
-              ================================================= */}
-
+          {/* Sidebar */}
           <aside className="space-y-4 lg:sticky lg:top-6">
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-foreground">
-                  Before you analyze
-                </p>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-(--shadow-xs)">
+              <p className="text-sm font-semibold text-foreground">
+                Before you analyze
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                A few things that produce better results.
+              </p>
 
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  A few things that produce better results.
-                </p>
-              </div>
-
-              <ul className="space-y-4">
+              <ul className="mt-4 space-y-3.5">
                 {[
                   "Use the resume version you actually send to employers.",
                   "Paste the complete job description, not just the requirements.",
                   "Keep measurable achievements whenever possible.",
                   "Review AI suggestions before accepting them.",
                 ].map((tip) => (
-                  <li key={tip} className="flex items-start gap-3">
+                  <li key={tip} className="flex items-start gap-2.5">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
                       <CheckCircle2
                         className="h-3.5 w-3.5"
                         aria-hidden="true"
                       />
                     </span>
-
                     <span className="text-sm leading-5 text-muted-foreground">
                       {tip}
                     </span>
@@ -538,17 +516,15 @@ export default function DashboardPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:p-6">
+            <div className="rounded-2xl border border-primary/15 bg-primary/4 p-5">
               <div className="flex items-start gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Sparkles className="h-4 w-4" aria-hidden="true" />
                 </div>
-
                 <div>
                   <p className="text-sm font-semibold text-foreground">
                     What you&apos;ll get
                   </p>
-
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     A structured breakdown of your resume&apos;s fit for the
                     target role.
@@ -575,10 +551,6 @@ export default function DashboardPage() {
           </aside>
         </div>
       </section>
-
-      {/* =====================================================
-          PURCHASE MODAL
-          ===================================================== */}
 
       {showBuyModal && (
         <BuyCreditsModal
