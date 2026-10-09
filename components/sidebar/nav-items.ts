@@ -1,4 +1,4 @@
-import { LayoutDashboard, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 
 export type NavItem = {
   title: string;
@@ -12,4 +12,5 @@ export type NavItem = {
 // this is the only file you need to touch to extend the nav.
 export const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

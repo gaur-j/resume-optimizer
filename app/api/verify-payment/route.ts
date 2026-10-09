@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import crypto from "crypto";
+import { grantCreditsForOrder } from "@/lib/payments";
 
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
@@ -49,9 +50,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get payment record
+    // Ownership check: the order must belong to the signed-in user.
+    // (Read-only; goes through the "payments_select_own" RLS policy.)
     const { data: paymentData, error: paymentError } = await supabase
       .from("payments")
-      .select("*")
+      .select("id")
       .eq("razorpay_order_id", razorpay_order_id)
       .eq("user_id", user.id)
       .single();
@@ -64,71 +67,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already processed
-    if (paymentData.status === "success") {
-      return NextResponse.json({
-        success: true,
-        message: "Payment already processed",
-      });
-    }
+    // Single atomic, idempotent grant shared with the webhook. Replaying
+    // this request (or racing the webhook) can never grant twice.
+    const result = await grantCreditsForOrder(razorpay_order_id, {
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+    });
 
-    // Update payment status
-    const { error: updatePaymentError } = await supabase
-      .from("payments")
-      .update({
-        razorpay_payment_id,
-        razorpay_signature,
-        status: "success",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", paymentData.id);
-
-    if (updatePaymentError) {
-      console.error("Error updating payment:", updatePaymentError);
-      return NextResponse.json(
-        { error: "Failed to update payment" },
-        { status: 500 }
-      );
-    }
-
-    // Add credits to user
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("scan_credits, total_spent_inr, total_paid_scans")
-      .eq("id", user.id)
-      .single();
-
-    if (userError || !userData) {
-      console.error("User record not found:", userError);
-      return NextResponse.json(
-        { error: "User record not found" },
-        { status: 404 }
-      );
-    }
-
-    const { error: creditError } = await supabase
-      .from("users")
-      .update({
-        scan_credits: userData.scan_credits + paymentData.scan_credits_granted,
-        total_spent_inr: userData.total_spent_inr + paymentData.amount_inr,
-        total_paid_scans:
-          userData.total_paid_scans + paymentData.scan_credits_granted,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    if (creditError) {
-      console.error("Error updating credits:", creditError);
+    if (!result.granted) {
+      console.error("Credit grant failed:", result.reason, razorpay_order_id);
       return NextResponse.json(
         { error: "Failed to add credits" },
         { status: 500 }
       );
     }
 
+    if (result.alreadyProcessed) {
+      return NextResponse.json({
+        success: true,
+        message: "Payment already processed",
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        credits_added: paymentData.scan_credits_granted,
+        credits_added: result.creditsAdded,
         message: "Payment verified and credits added",
       },
     });

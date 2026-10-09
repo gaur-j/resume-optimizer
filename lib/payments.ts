@@ -58,7 +58,8 @@ async function sendServerPurchaseEvent(payment: {
 }
 
 export async function grantCreditsForOrder(
-  razorpayOrderId: string
+  razorpayOrderId: string,
+  proof?: { paymentId?: string; signature?: string }
 ): Promise<
   | { granted: true; alreadyProcessed: false; creditsAdded: number }
   | { granted: true; alreadyProcessed: true; creditsAdded: 0 }
@@ -66,71 +67,62 @@ export async function grantCreditsForOrder(
 > {
   const admin = createAdminClient();
 
-  const { data: payment, error: paymentError } = await admin
-    .from("payments")
-    .select("*")
-    .eq("razorpay_order_id", razorpayOrderId)
-    .single();
-
-  if (paymentError || !payment) {
-    return { granted: false, reason: "Payment record not found" };
-  }
-
-  // Idempotency guard — if the client-side verify call already handled
-  // this order, do nothing. This is what makes it safe for the webhook
-  // and the client call to both fire for the same successful payment.
-  if (payment.status === "success") {
-    return { granted: true, alreadyProcessed: true, creditsAdded: 0 };
-  }
-
-  const { data: userData, error: userError } = await admin
-    .from("users")
-    .select("scan_credits, total_spent_inr, total_paid_scans")
-    .eq("id", payment.user_id)
-    .single();
-
-  if (userError || !userData) {
-    return { granted: false, reason: "User record not found" };
-  }
-
-  const { error: updatePaymentError } = await admin
-    .from("payments")
-    .update({ status: "success", updated_at: new Date().toISOString() })
-    .eq("id", payment.id)
-    .eq("status", "pending"); // extra guard against a race between two callers
-
-  if (updatePaymentError) {
-    return { granted: false, reason: "Failed to update payment status" };
-  }
-
-  const { error: creditError } = await admin
-    .from("users")
-    .update({
-      scan_credits: userData.scan_credits + payment.scan_credits_granted,
-      total_spent_inr: userData.total_spent_inr + payment.amount_inr,
-      total_paid_scans:
-        userData.total_paid_scans + payment.scan_credits_granted,
-      updated_at: new Date().toISOString(),
+  // The status flip (pending -> success) and the credit increment happen
+  // inside ONE Postgres function / transaction (grant_credits_for_order in
+  // lib/supabase/migrations/001_security_hardening.sql). Concurrent callers
+  // are serialized on the payment row, so exactly one of them grants.
+  const { data, error } = await admin
+    .rpc("grant_credits_for_order", {
+      p_order_id: razorpayOrderId,
+      p_payment_id: proof?.paymentId ?? null,
+      p_signature: proof?.signature ?? null,
     })
-    .eq("id", payment.user_id);
+    .single<{
+      outcome: "granted" | "already_processed" | "not_payable" | "not_found";
+      payment: {
+        user_id: string;
+        razorpay_order_id: string;
+        amount_inr: number;
+        scan_credits_granted: number;
+        attribution?: {
+          utm_source?: string;
+          utm_medium?: string;
+          utm_campaign?: string;
+        } | null;
+      } | null;
+    }>();
 
-  if (creditError) {
+  if (error || !data) {
+    console.error("grant_credits_for_order failed:", error);
     return { granted: false, reason: "Failed to add credits to user" };
   }
 
-  // Fires exactly once per order, regardless of whether the client
-  // verify-call or the webhook got here first — that's what the
-  // alreadyProcessed check above already guarantees.
-  await sendServerPurchaseEvent({
-    user_id: payment.user_id,
-    razorpay_order_id: payment.razorpay_order_id,
-    amount_inr: payment.amount_inr,
-    attribution: payment.attribution,
-  });
+  function single<T>() {
+    throw new Error("Function not implemented.");
+  }
 
-  return {
-    granted: true,
-    alreadyProcessed: false,
-    creditsAdded: payment.scan_credits_granted,
-  };
+  switch (data.outcome) {
+    case "granted": {
+      const payment = data.payment!;
+
+      await sendServerPurchaseEvent({
+        user_id: payment.user_id,
+        razorpay_order_id: payment.razorpay_order_id,
+        amount_inr: payment.amount_inr,
+        attribution: payment.attribution,
+      });
+
+      return {
+        granted: true,
+        alreadyProcessed: false,
+        creditsAdded: payment.scan_credits_granted,
+      };
+    }
+    case "already_processed":
+      return { granted: true, alreadyProcessed: true, creditsAdded: 0 };
+    case "not_found":
+      return { granted: false, reason: "Payment record not found" };
+    default:
+      return { granted: false, reason: "Payment is not in a payable state" };
+  }
 }

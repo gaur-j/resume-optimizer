@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Razorpay from "razorpay";
 import type { Orders } from "razorpay/dist/types/orders";
 import type { INormalizeError } from "razorpay/dist/types/api";
@@ -78,8 +79,10 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Save order to database
-    const { data: paymentData, error: paymentError } = await supabase
+    // Save order to database. Clients have no INSERT rights on payments
+    // (see 001_security_hardening.sql), so this uses the service-role
+    // client; user_id comes from the verified session above, never the body.
+    const { data: paymentData, error: paymentError } = await createAdminClient()
       .from("payments")
       .insert({
         user_id: user.id,

@@ -37,10 +37,22 @@ export function isPaidUser(totalPaidScans: number | null | undefined): boolean {
  * How many AI-rewritten bullet suggestions this user is allowed to see,
  * based on their lifetime purchase history. Used server-side to truncate
  * the array before it ever reaches the client.
+ *
+ * isActiveSubscriber short-circuits to the top tier regardless of
+ * totalPaidScans - an active Base/Pro subscriber (see isSubscriber()
+ * below) is guaranteed at least what the best one-time-purchase tier
+ * gets. This is additive: totalPaidScans keeps its exact original
+ * meaning (lifetime one-time purchases only) and nothing about the
+ * one-time-purchase tiers changes for someone who never subscribes.
  */
 export function getSuggestionLimit(
-  totalPaidScans: number | null | undefined
+  totalPaidScans: number | null | undefined,
+  isActiveSubscriber = false
 ): number {
+  if (isActiveSubscriber) {
+    return PLAN_TIERS[0].suggestionLimit; // same ceiling as "pack" - see file header
+  }
+
   const total = totalPaidScans ?? 0;
   // PLAN_TIERS always has a `free` fallback at minTotalPaidScans: 0, so
   // this will always match — the `?? 3` below is just a type-safety net.
@@ -49,8 +61,13 @@ export function getSuggestionLimit(
 }
 
 export function getPlanName(
-  totalPaidScans: number | null | undefined
+  totalPaidScans: number | null | undefined,
+  isActiveSubscriber = false
 ): PlanTier["name"] {
+  if (isActiveSubscriber) {
+    return PLAN_TIERS[0].name;
+  }
+
   const total = totalPaidScans ?? 0;
   const tier = PLAN_TIERS.find((t) => total >= t.minTotalPaidScans);
   return tier?.name ?? "free";
@@ -59,7 +76,25 @@ export function getPlanName(
 /** Convenience helper for any UI that needs to clamp a suggestion array. */
 export function visibleSuggestionCount(
   totalSuggestions: number,
-  totalPaidScans: number | null | undefined
+  totalPaidScans: number | null | undefined,
+  isActiveSubscriber = false
 ): number {
-  return Math.min(getSuggestionLimit(totalPaidScans), totalSuggestions);
+  return Math.min(
+    getSuggestionLimit(totalPaidScans, isActiveSubscriber),
+    totalSuggestions
+  );
+}
+
+/**
+ * Gates paid resume templates (Epic 2) and the top suggestion tier above.
+ * Only "active" grants access — see CanonicalSubscriptionStatus in
+ * lib/billing/grant.ts, which is the only place this status string is
+ * ever written. Accepts a plain row/partial-row shape rather than a
+ * specific ORM type so any caller (a full users-table row, or just the
+ * one column selected) can use it without an extra query or a cast.
+ */
+export function isSubscriber(
+  user: { subscription_status?: string | null } | null | undefined
+): boolean {
+  return user?.subscription_status === "active";
 }

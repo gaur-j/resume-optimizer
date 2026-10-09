@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { exportResume } from "@/lib/export-resume";
+import { getTemplate } from "@/lib/resume-templates/registry";
+import { isSubscriber } from "@/lib/plan";
 
 export const runtime = "nodejs";
 
@@ -19,6 +21,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const acceptedResume = body?.acceptedResume;
+    const templateId =
+      typeof body?.templateId === "string" ? body.templateId : undefined;
 
     if (!acceptedResume) {
       return NextResponse.json(
@@ -27,7 +31,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await exportResume(acceptedResume);
+    // Server-side enforcement, independent of whatever the picker UI
+    // shows - a request can't unlock a paid template just by naming it in
+    // the body. Subscription state lives on the users ROW (not on the
+    // Supabase auth user), so it's read from there. If the column doesn't
+    // exist yet (billing migration not run) the query errors, row is null,
+    // and everyone is treated as a non-subscriber - fails closed.
+    const template = getTemplate(templateId);
+    if (template.tier === "paid") {
+      const { data: row } = await supabase
+        .from("users")
+        .select("subscription_status")
+        .eq("id", user.id)
+        .single();
+
+      if (!isSubscriber(row)) {
+        return NextResponse.json(
+          {
+            error: `The "${template.name}" template requires a subscription.`,
+            code: "TEMPLATE_LOCKED",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    const result = await exportResume(acceptedResume, template.id);
 
     if (!result) {
       return NextResponse.json(

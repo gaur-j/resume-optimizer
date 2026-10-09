@@ -80,10 +80,12 @@ DROP POLICY IF EXISTS "users_select_own" ON users;
 CREATE POLICY "users_select_own" ON users
   FOR SELECT USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "users_update_own" ON users;
-CREATE POLICY "users_update_own" ON users
-  FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+--No INSERT/UPDATE policy on users on purpose: clients may only READ their
+-- own row. All writes (credits, spend totals) go through SECURITY DEFINER
+-- functions or the service-role client. See migrations/001_security_hardening.sql.
 
+DROP POLICY IF EXISTS "users_update_own" ON users;
+REVOKE INSERT, UPDATE, DELETE ON users FROM anon, authenticated;
 DROP POLICY IF EXISTS "scans_select_own" ON scans;
 CREATE POLICY "scans_select_own" ON scans
   FOR SELECT USING (auth.uid() = user_id);
@@ -96,22 +98,24 @@ DROP POLICY IF EXISTS "payments_select_own" ON payments;
 CREATE POLICY "payments_select_own" ON payments
   FOR SELECT USING (auth.uid() = user_id);
 
+--Payments are read-only for clients; /api/create-order inserts with the
+-- service-role client.
+
 DROP POLICY IF EXISTS "payments_insert_own" ON payments;
-CREATE POLICY "payments_insert_own" ON payments
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+REVOKE INSERT, UPDATE, DELETE ON payments FROM anon, authenticated;
 
 DROP POLICY IF EXISTS "referrals_select_own" ON referrals;
 CREATE POLICY "referrals_select_own" ON referrals
   FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
 
--- Note: UPDATEs to payments.status and users.scan_credits are done
--- server-side via the service-role client (lib/supabase/admin.ts),
--- which bypasses RLS by design — that's why there's no "update own"
--- policy for payments or a credits-update policy for users beyond
--- what's above. Never expose the service-role key to the browser.
+-- Note: writes to payments and users.scan_credits happen server-side only:
+-- the service-role client (lib/supabase/admin.ts) bypasses RLS by design, and
+-- the SECURITY DEFINER functions below do the atomic credit operations.
+-- Never expose the service-role key to the browser.
 
 -- ============================================================
 -- Indexes
+CREATE TRIGGER set_payments_updated_at
 -- ============================================================
 CREATE INDEX IF NOT EXISTS scans_user_id_idx ON scans(user_id);
 CREATE INDEX IF NOT EXISTS scans_created_at_idx ON scans(created_at);
@@ -165,28 +169,21 @@ CREATE TRIGGER set_payments_updated_at
 -- ============================================================
 -- Atomic credit operations (prevents race conditions)
 -- ============================================================
--- Consuming and refunding scan_credits must never be a read-then-write
--- from application code — two concurrent requests could both read the
--- same balance and both proceed. These functions perform the guard and
--- the update in a single UPDATE statement, which Postgres serializes at
--- the row level, so only one concurrent caller can ever succeed once
--- credits are down to their last unit.
---
--- These run under the CALLER's own session (not the service-role admin
--- client), relying on the existing "users_update_own" RLS policy above —
--- that's why each function also pins p_user_id = auth.uid() as a second,
--- explicit guard. This is intentionally different from the payment-
--- crediting path in lib/payments.ts, which legitimately needs the
--- service-role client because it runs from a webhook with no user session.
+-- Guard and update happen in one statement/transaction, serialized at the
+-- row level. SECURITY DEFINER because clients have no UPDATE rights on users.
+-- consume_scan_credit: signed-in users, own row only (id = auth.uid()).
+-- refund_scan_credit / grant_credits_for_order: service role only.
 
 CREATE OR REPLACE FUNCTION public.consume_scan_credit(p_user_id UUID)
 RETURNS TABLE (success BOOLEAN, remaining_credits INT)
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_remaining INT;
 BEGIN
-  UPDATE users
+  UPDATE public.users
   SET scan_credits = scan_credits - 1,
       updated_at = NOW()
   WHERE id = p_user_id
@@ -196,34 +193,88 @@ BEGIN
 
   IF v_remaining IS NULL THEN
     RETURN QUERY
-      SELECT FALSE, COALESCE((SELECT scan_credits FROM users WHERE id = p_user_id), 0);
+      SELECT FALSE, COALESCE((SELECT scan_credits FROM public.users WHERE id = p_user_id AND id = auth.uid()), 0);
   ELSE
     RETURN QUERY SELECT TRUE, v_remaining;
   END IF;
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.consume_scan_credit(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.consume_scan_credit(UUID) TO authenticated;
 
--- Refunds one credit — used when a scan is consumed atomically up front
--- but the AI pipeline or DB write fails afterward, so the user isn't
--- charged for a scan they never actually received.
+
 CREATE OR REPLACE FUNCTION public.refund_scan_credit(p_user_id UUID)
 RETURNS INT
 LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
 AS $$
-  UPDATE users
-  SET scan_credits = scan_credits + 1,
+  UPDATE public.users
+  SET scan_credits = scan_credits  1,
       updated_at = NOW()
   WHERE id = p_user_id
-    AND id = auth.uid()
   RETURNING scan_credits;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.refund_scan_credit(UUID) TO authenticated;
+REVOKE ALL ON FUNCTION public.refund_scan_credit(UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.refund_scan_credit(UUID) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.grant_credits_for_order(
+  p_order_id TEXT,
+  p_payment_id TEXT DEFAULT NULL,
+  p_signature TEXT DEFAULT NULL
+) RETURNS TABLE (outcome TEXT, payment JSONB)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_pay public.payments%ROWTYPE;
+BEGIN
+  UPDATE public.payments p
+  SET status = 'success',
+      razorpay_payment_id = COALESCE(p_payment_id, p.razorpay_payment_id),
+      razorpay_signature = COALESCE(p_signature, p.razorpay_signature),
+      updated_at = NOW()
+  WHERE p.razorpay_order_id = p_order_id
+    AND p.status = 'pending'
+  RETURNING * INTO v_pay;
+
+  IF FOUND THEN
+    UPDATE public.users u
+    SET scan_credits = u.scan_credits  v_pay.scan_credits_granted,
+        total_spent_inr = u.total_spent_inr  v_pay.amount_inr,
+        total_paid_scans = u.total_paid_scans  v_pay.scan_credits_granted,
+        updated_at = NOW()
+    WHERE u.id = v_pay.user_id;
+
+    IF NOT FOUND THEN
+      -- Roll the payment status back too; never mark paid without crediting.
+      RAISE EXCEPTION 'User % not found for order %', v_pay.user_id, p_order_id;
+    END IF;
+
+    RETURN QUERY SELECT 'granted'::TEXT, to_jsonb(v_pay);
+    RETURN;
+  END IF;
+
+  SELECT * INTO v_pay FROM public.payments WHERE razorpay_order_id = p_order_id;
+
+  IF FOUND THEN
+    RETURN QUERY SELECT
+      CASE WHEN v_pay.status = 'success' THEN 'already_processed' ELSE 'not_payable' END,
+      to_jsonb(v_pay);
+  ELSE
+    RETURN QUERY SELECT 'not_found'::TEXT, NULL::JSONB;
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.grant_credits_for_order(TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.grant_credits_for_order(TEXT, TEXT, TEXT) TO service_role;
 
 -- ============================================================
--- Rate limiting (generic table + function, reusable by any route)
+-- Rate limiting (generic table  function, reusable by any route)
 -- ============================================================
 -- Fixed-window counter per (user, action). Uses the same atomic-RPC
 -- pattern as consume_scan_credit: the check and the increment happen in
@@ -240,10 +291,11 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+-- No client policy: rate_limits is written only by check_rate_limit()
+-- (SECURITY DEFINER), so users can't reset their own counters.
 
 DROP POLICY IF EXISTS "rate_limits_all_own" ON rate_limits;
-CREATE POLICY "rate_limits_all_own" ON rate_limits
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+REVOKE ALL ON rate_limits FROM anon, authenticated;
 
 CREATE INDEX IF NOT EXISTS rate_limits_lookup_idx
   ON rate_limits(user_id, action, window_start);
@@ -255,25 +307,25 @@ CREATE OR REPLACE FUNCTION public.check_rate_limit(
   p_window_seconds INT
 ) RETURNS TABLE (allowed BOOLEAN, retry_after_seconds INT)
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_window_start TIMESTAMPTZ;
   v_count INT;
 BEGIN
-  IF p_user_id != auth.uid() THEN
+  IF p_user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'Cannot check rate limit for another user';
   END IF;
 
-  -- Bucket "now" into fixed windows of p_window_seconds — e.g. with a
-  -- 60s window, 14:32:07 and 14:32:53 land in the same bucket (14:32:00).
   v_window_start := to_timestamp(
     floor(extract(epoch FROM NOW()) / p_window_seconds) * p_window_seconds
   );
 
-  INSERT INTO rate_limits (user_id, action, window_start, request_count)
+  INSERT INTO public.rate_limits (user_id, action, window_start, request_count)
   VALUES (p_user_id, p_action, v_window_start, 1)
   ON CONFLICT (user_id, action, window_start)
-  DO UPDATE SET request_count = rate_limits.request_count + 1
+  DO UPDATE SET request_count = public.rate_limits.request_count + 1
   RETURNING request_count INTO v_count;
 
   IF v_count > p_max_requests THEN
@@ -289,8 +341,10 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.check_rate_limit(UUID, TEXT, INT, INT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.check_rate_limit(UUID, TEXT, INT, INT) TO authenticated;
 
 -- Housekeeping (optional): old buckets accumulate harmlessly since they're
 -- tiny rows, but you can prune them periodically, e.g. via a daily cron:
 --   DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '2 days';
+

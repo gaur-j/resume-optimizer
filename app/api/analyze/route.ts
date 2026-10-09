@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { analyzeATS, rewriteBullets, tailorResume } from "@/lib/ai";
 import { extractBullets } from "@/lib/utils";
 import { getSuggestionLimit, isPaidUser } from "@/lib/plan";
@@ -153,10 +154,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (pipelineError) {
-      const { error: refundError } = await supabase
-        .rpc("refund_scan_credit", { p_user_id: user.id })
-        .single();
-
+      // refund_scan_credit is service-role only (clients must not be able
+      // to mint credits), so it goes through the admin client.
+      const { error: refundError } = await createAdminClient().rpc(
+        "refund_scan_credit",
+        { p_user_id: user.id }
+      );
       if (refundError) {
         console.error(
           "CRITICAL: failed to refund credit after pipeline error:",

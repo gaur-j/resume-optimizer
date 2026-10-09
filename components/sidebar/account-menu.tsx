@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -133,19 +134,15 @@ export function AccountMenu({ user, onSignOut }: AccountMenuProps) {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem render={<Link href="/dashboard/settings" />}>
             <Settings className="h-4 w-4" />
             Account Settings
-            <span className="ml-auto text-[10px] text-muted-foreground">
-              Soon
-            </span>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem
+            render={<Link href="/dashboard/settings#password" />}
+          >
             <ShieldCheck className="h-4 w-4" />
             Password &amp; Security
-            <span className="ml-auto text-[10px] text-muted-foreground">
-              Soon
-            </span>
           </DropdownMenuItem>
           <DropdownMenuItem disabled>
             <History className="h-4 w-4" />
