@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get payment record
     // Ownership check: the order must belong to the signed-in user.
     // (Read-only; goes through the "payments_select_own" RLS policy.)
     const { data: paymentData, error: paymentError } = await supabase

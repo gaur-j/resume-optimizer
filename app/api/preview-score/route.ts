@@ -1,62 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeATS } from "@/lib/ai";
+import {
+  MAX_JD_CHARS,
+  MAX_JSON_BODY_BYTES,
+  MAX_RESUME_CHARS,
+} from "@/lib/limits";
+import { PayloadTooLargeError, readLimitedJson } from "@/lib/request-body";
+import { checkPublicRateLimit, publicLimitResponse } from "@/lib/ip-rate-limit";
 
 export const runtime = "nodejs";
 
-const MAX_RESUME_LENGTH = 30_000;
-const MAX_JD_LENGTH = 20_000;
+const MAX_RESUME_LENGTH = MAX_RESUME_CHARS;
+const MAX_JD_LENGTH = MAX_JD_CHARS;
 
-// Lightweight protection against accidental abuse.
-// This is intentionally separate from the authenticated analysis rate limit.
-const requestBuckets = new Map<string, { count: number; resetAt: number }>();
-
-const MAX_REQUESTS = 3;
-const WINDOW_MS = 10 * 60 * 1000;
-
-function getClientKey(request: NextRequest): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
-  }
-
-  return (
-    request.headers.get("x-real-ip") ??
-    request.headers.get("cf-connecting-ip") ??
-    "anonymous"
-  );
-}
-
-function checkPublicRateLimit(key: string) {
-  const now = Date.now();
-  const current = requestBuckets.get(key);
-
-  if (!current || now >= current.resetAt) {
-    requestBuckets.set(key, {
-      count: 1,
-      resetAt: now + WINDOW_MS,
-    });
-
-    return {
-      allowed: true,
-      retryAfterSeconds: 0,
-    };
-  }
-
-  if (current.count >= MAX_REQUESTS) {
-    return {
-      allowed: false,
-      retryAfterSeconds: Math.ceil((current.resetAt - now) / 1000),
-    };
-  }
-
-  current.count += 1;
-
-  return {
-    allowed: true,
-    retryAfterSeconds: 0,
-  };
-}
+// Unauthenticated + paid LLM call, so limits live in Postgres (shared by every
+// serverless instance) rather than in per-instance memory. Per-IP burst and
+// daily limits stop one client; the GLOBAL daily cap is the cost kill-switch
+// that holds even against an attacker rotating through many IPs.
+const PER_IP_LIMITS = [
+  { max: 3, windowSeconds: 10 * 60 },
+  { max: 10, windowSeconds: 24 * 60 * 60 },
+];
+const GLOBAL_DAILY_LIMIT = { max: 3_000, windowSeconds: 24 * 60 * 60 };
 
 function normalizeInput(value: unknown, maxLength: number): string | null {
   if (typeof value !== "string") {
@@ -74,25 +39,24 @@ function normalizeInput(value: unknown, maxLength: number): string | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const clientKey = getClientKey(request);
-    const rateLimit = checkPublicRateLimit(clientKey);
+    const rateLimit = await checkPublicRateLimit(
+      request,
+      "preview-score",
+      PER_IP_LIMITS,
+      GLOBAL_DAILY_LIMIT
+    );
 
     if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          error:
-            "You've reached the free preview limit. Create an account to continue.",
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(rateLimit.retryAfterSeconds),
-          },
-        }
+      return publicLimitResponse(
+        rateLimit,
+        "You've reached the free preview limit. Create an account to continue."
       );
     }
 
-    const body = await request.json();
+    const body = (await readLimitedJson(request, MAX_JSON_BODY_BYTES)) as {
+      resume_text?: unknown;
+      jd_text?: unknown;
+    } | null;
 
     const resumeText = normalizeInput(body?.resume_text, MAX_RESUME_LENGTH);
 
@@ -139,6 +103,17 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        { error: "Your resume or job description is too long." },
+        { status: 413 }
+      );
+    }
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    }
+
     console.error("Public ATS preview error:", error);
 
     return NextResponse.json(

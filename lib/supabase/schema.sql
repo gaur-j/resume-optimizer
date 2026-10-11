@@ -115,7 +115,6 @@ CREATE POLICY "referrals_select_own" ON referrals
 
 -- ============================================================
 -- Indexes
-CREATE TRIGGER set_payments_updated_at
 -- ============================================================
 CREATE INDEX IF NOT EXISTS scans_user_id_idx ON scans(user_id);
 CREATE INDEX IF NOT EXISTS scans_created_at_idx ON scans(created_at);
@@ -203,7 +202,6 @@ $$;
 REVOKE ALL ON FUNCTION public.consume_scan_credit(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.consume_scan_credit(UUID) TO authenticated;
 
-
 CREATE OR REPLACE FUNCTION public.refund_scan_credit(p_user_id UUID)
 RETURNS INT
 LANGUAGE sql
@@ -211,7 +209,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   UPDATE public.users
-  SET scan_credits = scan_credits  1,
+  SET scan_credits = scan_credits + 1,
       updated_at = NOW()
   WHERE id = p_user_id
   RETURNING scan_credits;
@@ -243,9 +241,9 @@ BEGIN
 
   IF FOUND THEN
     UPDATE public.users u
-    SET scan_credits = u.scan_credits  v_pay.scan_credits_granted,
-        total_spent_inr = u.total_spent_inr  v_pay.amount_inr,
-        total_paid_scans = u.total_paid_scans  v_pay.scan_credits_granted,
+   SET scan_credits = u.scan_credits + v_pay.scan_credits_granted,
+        total_spent_inr = u.total_spent_inr + v_pay.amount_inr,
+        total_paid_scans = u.total_paid_scans + v_pay.scan_credits_granted,
         updated_at = NOW()
     WHERE u.id = v_pay.user_id;
 
@@ -274,7 +272,7 @@ REVOKE ALL ON FUNCTION public.grant_credits_for_order(TEXT, TEXT, TEXT) FROM PUB
 GRANT EXECUTE ON FUNCTION public.grant_credits_for_order(TEXT, TEXT, TEXT) TO service_role;
 
 -- ============================================================
--- Rate limiting (generic table  function, reusable by any route)
+-- Rate limiting (generic table + function, reusable by any route)
 -- ============================================================
 -- Fixed-window counter per (user, action). Uses the same atomic-RPC
 -- pattern as consume_scan_credit: the check and the increment happen in
@@ -291,9 +289,9 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
 -- No client policy: rate_limits is written only by check_rate_limit()
 -- (SECURITY DEFINER), so users can't reset their own counters.
-
 DROP POLICY IF EXISTS "rate_limits_all_own" ON rate_limits;
 REVOKE ALL ON rate_limits FROM anon, authenticated;
 
@@ -345,6 +343,74 @@ REVOKE ALL ON FUNCTION public.check_rate_limit(UUID, TEXT, INT, INT) FROM PUBLIC
 GRANT EXECUTE ON FUNCTION public.check_rate_limit(UUID, TEXT, INT, INT) TO authenticated;
 
 -- Housekeeping (optional): old buckets accumulate harmlessly since they're
--- tiny rows, but you can prune them periodically, e.g. via a daily cron:
---   DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '2 days';
+-- ============================================================
+-- Public (unauthenticated) rate limiting - shared across serverless instances
+-- Used by /api/preview-score and /api/public-extract-pdf via lib/ip-rate-limit.ts
+-- ============================================================
 
+CREATE TABLE IF NOT EXISTS public.ip_rate_limits (
+  key TEXT NOT NULL,            -- keyed hash of the client IP, or 'global'
+  action TEXT NOT NULL,         -- e.g. 'preview-score:600'
+  window_start TIMESTAMPTZ NOT NULL,
+  request_count INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (key, action, window_start)
+);
+
+CREATE INDEX IF NOT EXISTS ip_rate_limits_window_start_idx
+  ON public.ip_rate_limits (window_start);
+
+-- RLS on with NO policies + no grants: only the service role (which bypasses
+-- RLS) and the SECURITY DEFINER function below can touch this table.
+ALTER TABLE public.ip_rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.ip_rate_limits FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_ip_rate_limit(
+  p_key TEXT,
+  p_action TEXT,
+ p_max_requests INT,
+  p_window_seconds INT
+) RETURNS TABLE (allowed BOOLEAN, retry_after_seconds INT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_window_start TIMESTAMPTZ;
+  v_count INT;
+BEGIN
+  IF p_window_seconds <= 0 OR p_max_requests <= 0 THEN
+    RAISE EXCEPTION 'Invalid rate limit parameters';
+  END IF;
+
+  v_window_start := to_timestamp(
+    floor(extract(epoch FROM NOW()) / p_window_seconds) * p_window_seconds
+  );
+
+  -- Opportunistic cleanup (about 1% of calls) so the table can't grow forever.
+  IF random() < 0.01 THEN
+    DELETE FROM public.ip_rate_limits
+    WHERE window_start < NOW() - INTERVAL '2 days';
+  END IF;
+
+  INSERT INTO public.ip_rate_limits (key, action, window_start, request_count)
+  VALUES (p_key, p_action, v_window_start, 1)
+  ON CONFLICT (key, action, window_start)
+  DO UPDATE SET request_count = public.ip_rate_limits.request_count + 1
+  RETURNING request_count INTO v_count;
+
+  IF v_count > p_max_requests THEN
+    RETURN QUERY SELECT
+      FALSE,
+      GREATEST(
+        1,
+        p_window_seconds - floor(extract(epoch FROM NOW() - v_window_start))::INT
+      );
+  ELSE
+    RETURN QUERY SELECT TRUE, 0;
+  END IF;
+END;
+$$;
+
+-- Server-only: the public routes call this through the service-role client.
+REVOKE ALL ON FUNCTION public.check_ip_rate_limit(TEXT, TEXT, INT, INT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_ip_rate_limit(TEXT, TEXT, INT, INT) TO service_role;

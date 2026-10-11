@@ -5,6 +5,12 @@ import { analyzeATS, rewriteBullets, tailorResume } from "@/lib/ai";
 import { extractBullets } from "@/lib/utils";
 import { getSuggestionLimit, isPaidUser } from "@/lib/plan";
 import { checkRateLimits, ANALYZE_RATE_LIMITS } from "@/lib/rate-limit";
+import {
+  MAX_JD_CHARS,
+  MAX_JSON_BODY_BYTES,
+  MAX_RESUME_CHARS,
+} from "@/lib/limits";
+import { PayloadTooLargeError, readLimitedJson } from "@/lib/request-body";
 
 interface ConsumeCreditResult {
   success: boolean;
@@ -24,15 +30,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse request body
-    const { resume_text, jd_text } = await request.json();
+    // Parse request body (byte-capped; see lib/request-body.ts)
+    const body = (await readLimitedJson(request, MAX_JSON_BODY_BYTES)) as {
+      resume_text?: unknown;
+      jd_text?: unknown;
+    } | null;
 
-    if (!resume_text?.trim() || !jd_text?.trim()) {
+    // Must be strings, non-empty, and within the cost ceiling. These run
+    // BEFORE a credit is consumed or any LLM call is made.
+    if (
+      typeof body?.resume_text !== "string" ||
+      typeof body?.jd_text !== "string" ||
+      !body.resume_text.trim() ||
+      !body.jd_text.trim()
+    ) {
       return NextResponse.json(
         { error: "Resume and job description are required" },
         { status: 400 }
       );
     }
+
+    if (body.resume_text.length > MAX_RESUME_CHARS) {
+      return NextResponse.json(
+        {
+          error: `Your resume is too long (max ${MAX_RESUME_CHARS.toLocaleString()} characters).`,
+        },
+        { status: 413 }
+      );
+    }
+
+    if (body.jd_text.length > MAX_JD_CHARS) {
+      return NextResponse.json(
+        {
+          error: `The job description is too long (max ${MAX_JD_CHARS.toLocaleString()} characters).`,
+        },
+        { status: 413 }
+      );
+    }
+
+    const resume_text = body.resume_text;
+    const jd_text = body.jd_text;
 
     // --- RATE LIMITING ---
     const rateLimitFailure = await checkRateLimits(
@@ -160,6 +197,7 @@ export async function POST(request: NextRequest) {
         "refund_scan_credit",
         { p_user_id: user.id }
       );
+
       if (refundError) {
         console.error(
           "CRITICAL: failed to refund credit after pipeline error:",
@@ -172,6 +210,17 @@ export async function POST(request: NextRequest) {
       throw pipelineError;
     }
   } catch (error) {
+    // Body-parse failures happen before any credit is consumed.
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        { error: "Your resume or job description is too long." },
+        { status: 413 }
+      );
+    }
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    }
     console.error("Analysis error:", error);
 
     if (error instanceof Error && error.message.includes("API")) {

@@ -46,7 +46,7 @@ export async function checkRateLimit(
 
 /**
  * Checks a request against several stacked rules (e.g. a tight burst
- * guard  a looser hourly guard). Returns the first rule that fails, or
+ * guard + a looser hourly guard). Returns the first rule that fails, or
  * null if every rule passes.
  */
 export async function checkRateLimits(

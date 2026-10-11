@@ -97,10 +97,6 @@ export async function grantCreditsForOrder(
     return { granted: false, reason: "Failed to add credits to user" };
   }
 
-  function single<T>() {
-    throw new Error("Function not implemented.");
-  }
-
   switch (data.outcome) {
     case "granted": {
       const payment = data.payment!;

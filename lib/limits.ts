@@ -1,0 +1,21 @@
+/**
+ * Central input/cost limits. One place so the public preview, the
+ * authenticated analyze route, and the PDF parser can never drift apart.
+ */
+
+// Text sent to the LLM. A real resume is a few thousand characters; these
+// are generous ceilings that stop someone turning one request into an
+// arbitrarily large (paid) prompt.
+export const MAX_RESUME_CHARS = 30_000;
+export const MAX_JD_CHARS = 20_000;
+
+// Raw JSON body ceiling for routes that take resume + JD text. Text caps
+// above are in characters (up to 4 bytes each in UTF-8), plus JSON overhead.
+export const MAX_JSON_BODY_BYTES = 256 * 1024;
+
+// PDF uploads.
+export const MAX_PDF_BYTES = 5 * 1024 * 1024;
+export const MAX_PDF_PAGES = 10; // resumes are 1-4 pages; this is generous
+export const PDF_PARSE_TIMEOUT_MS = 15_000;
+// Multipart framing overhead allowed on top of the file itself.
+export const MULTIPART_OVERHEAD_BYTES = 64 * 1024;

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractTextFromPDF } from "@/lib/pdf";
+import { extractTextFromPDF, PdfLimitError } from "@/lib/pdf";
+import { MAX_PDF_BYTES, MULTIPART_OVERHEAD_BYTES } from "@/lib/limits";
+import { PayloadTooLargeError, readLimitedFormData } from "@/lib/request-body";
+import { checkPublicRateLimit, publicLimitResponse } from "@/lib/ip-rate-limit";
 
 export const runtime = "nodejs";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = MAX_PDF_BYTES;
 const MIN_TEXT_LENGTH = 50;
 
 function isPdfSignature(bytes: Uint8Array) {
@@ -33,7 +36,26 @@ function jsonError(message: string, status: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
+    // Unauthenticated + CPU-heavy: limit BEFORE reading the body. Per-IP
+    // limits stop one client; the global daily cap bounds total load.
+    const limit = await checkPublicRateLimit(
+      request,
+      "public-extract-pdf",
+      [{ max: 10, windowSeconds: 10 * 60 }],
+      { max: 10_000, windowSeconds: 24 * 60 * 60 }
+    );
+    if (!limit.allowed) {
+      return publicLimitResponse(
+        limit,
+        "Too many uploads. Please wait a few minutes or create an account."
+      );
+    }
+
+    const formData = await readLimitedFormData(
+      request,
+      MAX_FILE_SIZE + MULTIPART_OVERHEAD_BYTES
+    );
+
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
@@ -65,6 +87,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error("Public PDF extraction error:", error);
 
+      if (error instanceof PdfLimitError) {
+        return jsonError(error.message, 422);
+      }
+
       return jsonError(
         "We couldn't read this PDF. Please upload a text-based resume PDF.",
         422
@@ -87,6 +113,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return jsonError(
+        "Your resume is too large. Please upload a PDF under 5 MB.",
+        413
+      );
+    }
+
     console.error("Public PDF extraction error:", error);
 
     return jsonError(

@@ -48,9 +48,42 @@ export interface SummaryResult {
 }
 
 /**
- * Core call wrapper: tries Groq first, falls back to Gemini on 429/rate-limit.
- * This keeps your app working even if Groq's free tier gets hit hard during a traffic spike.
+ * Whether a Groq failure is worth a second attempt on Gemini.
+ *
+ * YES: rate limiting (429), timeout (408), server errors (5xx), provider
+ * auth/config problems (401/403/404 - Groq did no work, so a fallback costs
+ * nothing extra and keeps the app up), and network/empty-response failures
+ * (no HTTP status).
+ *
+ * NO: 400/413/422 and other client errors - those mean OUR request payload
+ * was rejected, so the same request would just fail again on Gemini and
+ * double the spend.
  */
+function shouldFallBackToGemini(err: unknown): boolean {
+  const status =
+    typeof err === "object" && err !== null && "status" in err
+      ? (err as { status?: unknown }).status
+      : undefined;
+
+  if (typeof status === "number") {
+    return (
+      status === 429 ||
+      status === 408 ||
+      status === 401 ||
+      status === 403 ||
+      status === 404 ||
+      status >= 500
+    );
+  }
+  return true;
+}
+
+/**
+ * Core call wrapper: tries Groq first, falls back to Gemini on transient
+ * failures (see shouldFallBackToGemini). This keeps your app working even if
+ * Groq's free tier gets hit hard during a traffic spike.
+ */
+
 async function callAI(
   systemPrompt: string,
   userPrompt: string,
@@ -83,6 +116,10 @@ async function callAI(
       console.warn("Groq rate-limited, falling back to Gemini...");
     }
 
+    if (!shouldFallBackToGemini(err)) {
+      throw new Error("The AI request was rejected. Please try again.");
+    }
+
     // --- Fallback to Gemini ---
     try {
       const model = genAI.getGenerativeModel({
@@ -90,6 +127,9 @@ async function callAI(
         systemInstruction: systemPrompt,
         generationConfig: {
           temperature: 0.3,
+          // Same output ceiling as the Groq call; without it Gemini would
+          // generate until the model's own (much larger) default limit.
+          maxOutputTokens: maxTokens,
           responseMimeType: "application/json",
         },
       });

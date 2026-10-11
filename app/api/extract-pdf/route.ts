@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { extractTextFromPDF } from "@/lib/pdf";
+import { extractTextFromPDF, PdfLimitError } from "@/lib/pdf";
+import { MAX_PDF_BYTES, MULTIPART_OVERHEAD_BYTES } from "@/lib/limits";
+import { PayloadTooLargeError, readLimitedFormData } from "@/lib/request-body";
 
 export const runtime = "nodejs";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = MAX_PDF_BYTES;
 const MIN_TEXT_LENGTH = 20;
 
 function isPdfSignature(bytes: Uint8Array) {
@@ -45,7 +47,10 @@ export async function POST(request: NextRequest) {
       return jsonError("Unauthorized", 401);
     }
 
-    const formData = await request.formData();
+    const formData = await readLimitedFormData(
+      request,
+      MAX_FILE_SIZE + MULTIPART_OVERHEAD_BYTES
+    );
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
@@ -80,6 +85,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error("PDF extraction error:", error);
 
+      if (error instanceof PdfLimitError) {
+        return jsonError(error.message, 422);
+      }
+
       return jsonError(
         "We couldn't read this PDF. It may be damaged, encrypted, or image-based. Please try another PDF or paste the resume text manually.",
         422
@@ -102,6 +111,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return jsonError(
+        "File is too large. Please upload a PDF under 5 MB.",
+        413
+      );
+    }
+
     console.error("PDF upload error:", error);
 
     return jsonError(
