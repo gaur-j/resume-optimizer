@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { safeRedirectPath } from "@/lib/security";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // `next` is attacker-controllable (it comes from the URL), so it is
+  // reduced to a same-origin path; anything else falls back to /dashboard.
+  const next = safeRedirectPath(searchParams.get("next"), origin);
   const provider = searchParams.get("provider") ?? "oauth";
 
   if (code) {
@@ -18,7 +21,7 @@ export async function GET(request: Request) {
       ).getTime();
       const isNewUser = lastSignInAt - createdAt < 10_000;
 
-      const redirectUrl = new URL(`${origin}${next}`);
+      const redirectUrl = new URL(next, origin);
       if (isNewUser) {
         redirectUrl.searchParams.set("new_user", "1");
         redirectUrl.searchParams.set("method", provider);

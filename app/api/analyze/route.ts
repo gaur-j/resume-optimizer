@@ -151,7 +151,14 @@ export async function POST(request: NextRequest) {
         bulletRewrites: [],
       });
 
-      // 4. Save the FULL result to the database
+      // 4. Slice the rewrites according to their exact tier limit BEFORE
+      // saving. The scans table is readable by its owner straight through the
+      // Supabase API (RLS "scans_select_own"), so anything stored here is
+      // readable by that user regardless of what this route returns. Storing
+      // the full list would let a free user read paid suggestions directly.
+      const visibleBulletRewrites = allBulletRewrites.slice(0, suggestionLimit);
+
+      // 5. Save the FULL result to the database
       const { data: scanData, error: scanError } = await supabase
         .from("scans")
         .insert({
@@ -162,7 +169,8 @@ export async function POST(request: NextRequest) {
           ats_score: atsAnalysis.overall_score,
           result_json: {
             ats_analysis: atsAnalysis,
-            bullet_rewrites: allBulletRewrites,
+            bullet_rewrites: visibleBulletRewrites,
+            total_suggestions_available: allBulletRewrites.length,
             tailored_resume: tailoredResume,
           },
         })
@@ -173,9 +181,6 @@ export async function POST(request: NextRequest) {
         console.error("Error saving scan:", scanError);
         throw new Error("Failed to save analysis");
       }
-
-      // 5. Slice the rewrites according to their exact tier limit
-      const visibleBulletRewrites = allBulletRewrites.slice(0, suggestionLimit);
 
       return NextResponse.json({
         success: true,

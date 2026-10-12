@@ -66,3 +66,13 @@ export const ANALYZE_RATE_LIMITS: RateLimitRule[] = [
   { action: "analyze_burst", maxRequests: 3, windowSeconds: 60 },
   { action: "analyze_hourly", maxRequests: 15, windowSeconds: 3600 },
 ];
+
+/**
+ * Rate limit rules for /api/create-order. Each call creates a real Razorpay
+ * order and a database row, so unmetered calls would let one account fill
+ * both with junk. Generous enough for a user who retries a payment dialog.
+ */
+export const CREATE_ORDER_RATE_LIMITS: RateLimitRule[] = [
+  { action: "create_order_burst", maxRequests: 3, windowSeconds: 60 },
+  { action: "create_order_hourly", maxRequests: 20, windowSeconds: 3600 },
+];

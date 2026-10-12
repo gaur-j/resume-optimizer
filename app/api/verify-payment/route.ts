@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 import { grantCreditsForOrder } from "@/lib/payments";
+import { safeEqual } from "@/lib/security";
 
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
@@ -24,7 +25,15 @@ export async function POST(request: NextRequest) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       (await request.json()) as VerifyPaymentRequest;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    // Must all be non-empty STRINGS of sane length (the body is untrusted JSON).
+    const isId = (value: unknown): value is string =>
+      typeof value === "string" && value.length > 0 && value.length <= 200;
+
+    if (
+      !isId(razorpay_order_id) ||
+      !isId(razorpay_payment_id) ||
+      !isId(razorpay_signature)
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -38,11 +47,11 @@ export async function POST(request: NextRequest) {
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    if (shasum !== razorpay_signature) {
-      console.warn("Invalid payment signature:", {
-        expected: shasum,
-        received: razorpay_signature,
-      });
+    if (!safeEqual(shasum, razorpay_signature)) {
+      // Never log the expected HMAC: it is exactly the value an attacker
+      // would need to forge for this order/payment pair.
+      console.warn("Invalid payment signature for order:", razorpay_order_id);
+
       return NextResponse.json(
         { error: "Invalid payment signature" },
         { status: 400 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkRateLimits, CREATE_ORDER_RATE_LIMITS } from "@/lib/rate-limit";
+import { PayloadTooLargeError, readLimitedJson } from "@/lib/request-body";
+import { sanitizeAttribution } from "@/lib/security";
+
 import Razorpay from "razorpay";
 import type { Orders } from "razorpay/dist/types/orders";
 import type { INormalizeError } from "razorpay/dist/types/api";
@@ -33,8 +37,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Per-user limit BEFORE anything that costs money or writes rows.
+    const rateLimitFailure = await checkRateLimits(
+      supabase,
+      user.id,
+      CREATE_ORDER_RATE_LIMITS
+    );
+
+    if (rateLimitFailure) {
+      return NextResponse.json(
+        { error: "Too many payment attempts. Please wait a moment." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitFailure.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
+    // Tiny, fixed-shape body: cap it so it can't be used to send megabytes.
     const { amount_inr, scan_credits, plan_type, attribution } =
-      (await request.json()) as OrderRequest;
+      (await readLimitedJson(request, 16 * 1024)) as OrderRequest;
 
     // Validate inputs
     if (!amount_inr || amount_inr <= 0 || !scan_credits || scan_credits <= 0) {
@@ -90,7 +114,8 @@ export async function POST(request: NextRequest) {
         amount_inr,
         scan_credits_granted: scan_credits,
         status: "pending",
-        attribution: attribution ?? null,
+        // Untrusted marketing data: only 3 known keys, short plain strings.
+        attribution: sanitizeAttribution(attribution),
       })
       .select()
       .single();
@@ -113,6 +138,14 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
     console.error("Order creation error:", error);
     return NextResponse.json(
       { error: "Failed to create order" },

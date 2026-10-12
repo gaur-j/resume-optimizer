@@ -1,5 +1,12 @@
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  fenceUntrusted,
+  UNTRUSTED_INPUT_NOTICE,
+  validateATSAnalysis,
+  validateBulletRewrites,
+} from "@/lib/ai-validate";
+
 import type {
   TailoredResume,
   TailoredResumeChangesSummary,
@@ -177,15 +184,25 @@ Respond with ONLY valid JSON, no markdown, no code blocks, no explanation:
   "missing_keywords": ["AWS", "Docker", "PostgreSQL"],
   "critical_issues": ["No quantified achievements", "Missing LinkedIn URL"],
   "quick_wins": ["Add 3 missing keywords to skills section", "Quantify at least 2 bullet points with metrics"]
-}`;
 
-  const userPrompt = `RESUME:\n${resumeText}\n\nJOB DESCRIPTION:\n${jobDescription}`;
+  ${UNTRUSTED_INPUT_NOTICE}`;
+
+  const userPrompt = `RESUME:\n${fenceUntrusted(
+    "resume",
+    resumeText
+  )}\n\nJOB DESCRIPTION:\n${fenceUntrusted("job_description", jobDescription)}`;
   const responseText = await callAI(systemPrompt, userPrompt);
 
   try {
-    return JSON.parse(cleanJSON(responseText)) as ATSAnalysisResult;
-  } catch {
-    console.error("Failed to parse ATS response:", responseText);
+    // Parse, then reduce to exactly the shape we expect (scores clamped to
+    // 0-100, arrays bounded, unknown keys dropped).
+    return validateATSAnalysis(JSON.parse(cleanJSON(responseText)));
+  } catch (error) {
+    // Never log the model output: it can echo the resume (personal data).
+    console.error(
+      `Failed to parse ATS response (${responseText.length} chars):`,
+      error instanceof Error ? error.message : "unknown error"
+    );
     throw new Error("Failed to parse ATS analysis response");
   }
 }
@@ -212,19 +229,26 @@ Respond with ONLY valid JSON, no markdown:
       "rewritten_options": ["Led React frontend development for 3+ customer-facing web applications, improving load times by 40%", "Architected React component library used across 5 projects, increasing team velocity by 35%"]
     }
   ]
-}`;
+}
+${UNTRUSTED_INPUT_NOTICE}`;
 
-  const userPrompt = `CURRENT BULLETS:\n${bulletsText}\n\nTARGET ROLE DESCRIPTION:\n${jobDescription.slice(
-    0,
-    500
+  const userPrompt = `CURRENT BULLETS:\n${fenceUntrusted(
+    "bullets",
+    bulletsText
+  )}\n\nTARGET ROLE DESCRIPTION:\n${fenceUntrusted(
+    "job_description",
+    jobDescription.slice(0, 500)
   )}`;
   const responseText = await callAI(systemPrompt, userPrompt);
 
   try {
     const parsed = JSON.parse(cleanJSON(responseText));
-    return (parsed.rewrites || []) as BulletRewriteResult[];
-  } catch {
-    console.error("Failed to parse bullets response:", responseText);
+    return validateBulletRewrites(parsed?.rewrites);
+  } catch (error) {
+    console.error(
+      `Failed to parse bullets response (${responseText.length} chars):`,
+      error instanceof Error ? error.message : "unknown error"
+    );
     throw new Error("Failed to parse bullet rewrite response");
   }
 }
@@ -252,7 +276,9 @@ Respond with ONLY valid JSON:
   try {
     return JSON.parse(cleanJSON(responseText)) as SummaryResult;
   } catch {
-    console.error("Failed to parse summary response:", responseText);
+    console.error(
+      `Failed to parse summary response (${responseText.length} chars)`
+    );
     throw new Error("Failed to parse summary response");
   }
 }
@@ -643,14 +669,19 @@ export async function tailorResume(
       ? context.missingKeywords.join(", ")
       : "None";
 
-  const userPrompt = `ORIGINAL RESUME:\n${resumeText}\n
-TARGET JOB DESCRIPTION:\n${jobDescription}\n
+  const userPrompt = `ORIGINAL RESUME:\n${fenceUntrusted(
+    "resume",
+    resumeText
+  )}\n
+TARGET JOB DESCRIPTION:\n${fenceUntrusted("job_description", jobDescription)}\n
 ALREADY MATCHED KEYWORDS (preserve in output):\n${matchedKeywordsContext}\n
 MISSING KEYWORDS TO ADD NATURALLY (only where truthful):\n${missingKeywordsContext}\n
 BULLET REWRITES TO APPLY (use preferred_rewrite for matching bullets):\n${bulletContext}`;
 
   async function attempt(forceStronger: boolean): Promise<TailoredResume> {
-    const systemPrompt = buildTailorSystemPrompt(forceStronger);
+    const systemPrompt = `${buildTailorSystemPrompt(
+      forceStronger
+    )}\n\n${UNTRUSTED_INPUT_NOTICE}`;
     const responseText = await callAI(systemPrompt, userPrompt, 4096);
 
     const parsed = JSON.parse(

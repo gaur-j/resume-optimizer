@@ -53,9 +53,13 @@ CREATE TABLE IF NOT EXISTS payments (
   scan_credits_granted INT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'success', 'failed')),
+    attribution JSONB,  -- sanitized utm_source / utm_medium / utm_campaign only
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- For databases created before this column existed (idempotent).
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS attribution JSONB;
 
 -- ── referrals (not used by the app yet) ───────────────────
 -- Kept ready for the referral growth feature from the roadmap.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { grantCreditsForOrder } from "@/lib/payments";
+import { safeEqual } from "@/lib/security";
 
 /**
  * Razorpay webhook — the safety net behind /api/verify-payment.
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     .update(rawBody)
     .digest("hex");
 
-  if (expectedSignature !== signature) {
+  if (!safeEqual(expectedSignature, signature)) {
     console.warn("Razorpay webhook: invalid signature");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
