@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     template: "%s | Get Resume AI",
   },
   description:
-    "Free ATS resume checker. Paste your resume and a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
+    "Free ATS resume checker. Upload your resume and paste a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
   keywords: [
     "AI resume builder",
     "resume optimizer",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     siteName: "Get Resume AI",
     title: "Free ATS Resume Checker & Score | Get Resume AI",
     description:
-      "Free ATS resume checker. Paste your resume and a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
+      "Free ATS resume checker. Upload your resume and paste a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
     images: [
       {
         url: "/og-image.png",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free ATS Resume Checker & Score | Get Resume AI",
     description:
-      "Free ATS resume checker. Paste your resume and a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
+      "Free ATS resume checker. Upload your resume and paste a job description to get your ATS score, missing keywords and AI-rewritten bullets in 2 minutes. No card.",
     images: ["/og-image.png"],
   },
   robots: {
