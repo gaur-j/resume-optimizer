@@ -22,7 +22,7 @@ const FAQS = [
   },
   {
     q: "What ATS systems does this work for?",
-    a: "We test against patterns used by the most common platforms Indian companies use, including Workday, Greenhouse, and Naukri's internal parsing.",
+    a: "We test against patterns used by the most common platforms companies use, including Workday, Greenhouse, and Naukri's internal parsing.",
   },
   {
     q: "Is there really no score cap or hidden fee?",
@@ -202,7 +202,7 @@ export default function Home() {
             <div className="text-center sm:text-left">
               <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-medium text-primary sm:text-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Built for Indian job seekers
+                Built for job seekers
               </p>
 
               <h1 className="text-balance font-mono text-[1.75rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
@@ -288,7 +288,7 @@ export default function Home() {
             {[
               "Works with LinkedIn, Naukri, Indeed",
               "No data sold or shared",
-              "Built by a student, for students",
+              "Built for students, job seekers",
             ].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <CheckIcon
@@ -355,7 +355,10 @@ export default function Home() {
                     className="rounded-2xl border border-border bg-card p-4 shadow-(--shadow-xs) sm:p-5"
                   >
                     <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-10 sm:w-10">
-                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                      <Icon
+                        className="h-4 w-4 sm:h-5 sm:w-5"
+                        aria-hidden="true"
+                      />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground sm:text-base">
                       {cat.title}
@@ -454,7 +457,9 @@ export default function Home() {
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
                   Most popular
                 </span>
-                <h3 className="text-sm font-semibold text-foreground">5 Scans</h3>
+                <h3 className="text-sm font-semibold text-foreground">
+                  5 Scans
+                </h3>
                 <div className="mt-2 font-mono text-3xl font-semibold text-foreground sm:text-4xl">
                   ₹249
                 </div>
@@ -478,7 +483,9 @@ export default function Home() {
 
               {/* Single */}
               <div className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-(--shadow-xs)">
-                <h3 className="text-sm font-semibold text-foreground">1 Scan</h3>
+                <h3 className="text-sm font-semibold text-foreground">
+                  1 Scan
+                </h3>
                 <div className="mt-2 font-mono text-3xl font-semibold text-foreground sm:text-4xl">
                   ₹99
                 </div>
