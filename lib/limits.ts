@@ -19,3 +19,11 @@ export const MAX_PDF_PAGES = 10; // resumes are 1-4 pages; this is generous
 export const PDF_PARSE_TIMEOUT_MS = 15_000;
 // Multipart framing overhead allowed on top of the file itself.
 export const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
+
+// PDF export payload (the structured resume the browser sends to /api/export).
+// A real 1-4 page resume is well under every one of these.
+export const MAX_EXPORT_SECTIONS = 30;
+export const MAX_EXPORT_LINES = 600;
+export const MAX_EXPORT_LINE_CHARS = 1_500;
+export const MAX_EXPORT_HEADING_CHARS = 100;
+export const MAX_EXPORT_TOTAL_CHARS = 60_000;

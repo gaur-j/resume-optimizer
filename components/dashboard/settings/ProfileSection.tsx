@@ -56,9 +56,9 @@ export function ProfileSection({
     const { error } = await supabase.auth.updateUser(
       { email: trimmed },
       {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          "/dashboard/settings"
-        )}`,
+        emailRedirectTo: `${
+          window.location.origin
+        }/auth/callback?next=${encodeURIComponent("/dashboard/settings")}`,
       }
     );
     setSavingEmail(false);
@@ -72,7 +72,13 @@ export function ProfileSection({
       return;
     }
     setEmailPending(true);
-    toast.success("Check your new inbox to confirm the change.");
+    // Supabase's "Secure email change" (on by default) sends a link to BOTH
+    // the current and the new address; the change completes only after both
+    // are clicked. That is what stops a hijacked session from silently
+    // moving the account to an attacker's inbox.
+    toast.success(
+      "Confirmation links sent. Click the link in both your current and new inbox to finish."
+    );
   }
 
   return (
@@ -93,7 +99,10 @@ export function ProfileSection({
             className="mt-1"
           />
         </div>
-        <Button type="submit" disabled={savingName || name.trim() === initialName}>
+        <Button
+          type="submit"
+          disabled={savingName || name.trim() === initialName}
+        >
           {savingName ? "Saving..." : "Save"}
         </Button>
       </form>
@@ -111,8 +120,8 @@ export function ProfileSection({
           />
           {emailPending && (
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Confirmation sent to {newEmail} — your email won&apos;t change
-              until you click the link there.
+              We sent confirmation links to your current address and to +{" "}
+              {newEmail}. Your email won&apos;t change until you click both.
             </p>
           )}
         </div>

@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+const GUIDE_LINKS = [
+  { href: "/ats-resume-checker", label: "ATS resume checker" },
+  { href: "/ats-friendly-resume-format", label: "ATS-friendly resume format" },
+  { href: "/resume-keyword-checker", label: "Resume keyword checker" },
+] as const;
+
 const LEGAL_LINKS = [
   { href: "/legal/privacy", label: "Privacy" },
   { href: "/legal/terms", label: "Terms" },
@@ -93,7 +99,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
             <p className="text-base font-bold tracking-tight text-foreground">
@@ -105,6 +111,24 @@ export function SiteFooter() {
             <p className="mt-4 text-xs text-muted-foreground">
               © 2026 Get Resume AI
             </p>
+          </div>
+
+          {/* Guides */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              Guides
+            </p>
+            <nav className="mt-3 flex flex-col gap-2">
+              {GUIDE_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
           {/* Legal */}

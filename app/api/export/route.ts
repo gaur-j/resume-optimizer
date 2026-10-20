@@ -3,6 +3,13 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { exportResume } from "@/lib/export-resume";
 import { getTemplate } from "@/lib/resume-templates/registry";
 import { isSubscriber } from "@/lib/plan";
+import { checkRateLimits, EXPORT_RATE_LIMITS } from "@/lib/rate-limit";
+import { MAX_JSON_BODY_BYTES } from "@/lib/limits";
+import { PayloadTooLargeError, readLimitedJson } from "@/lib/request-body";
+import {
+  ExportValidationError,
+  validateExportResume,
+} from "@/lib/export-validate";
 
 export const runtime = "nodejs";
 
@@ -18,17 +25,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    // Rendering a PDF costs CPU, so meter it per user before doing any work.
+    const rateLimitFailure = await checkRateLimits(
+      supabase,
+      user.id,
+      EXPORT_RATE_LIMITS
+    );
 
-    const acceptedResume = body?.acceptedResume;
+    if (rateLimitFailure) {
+      return NextResponse.json(
+        { error: "Too many exports. Please wait a moment and try again." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitFailure.retryAfterSeconds),
+          },
+        }
+      );
+    }
+
+    // Byte-capped body (see lib/request-body.ts).
+    const body = (await readLimitedJson(request, MAX_JSON_BODY_BYTES)) as {
+      acceptedResume?: unknown;
+      templateId?: unknown;
+    } | null;
+
     const templateId =
       typeof body?.templateId === "string" ? body.templateId : undefined;
 
-    if (!acceptedResume) {
+    if (!body?.acceptedResume) {
       return NextResponse.json(
         { error: "Resume data is required." },
         { status: 400 }
       );
+    }
+
+    // Reduce the untrusted payload to exactly what the renderer reads, with
+    // size ceilings (see lib/export-validate.ts).
+    let acceptedResume;
+    try {
+      acceptedResume = validateExportResume(body.acceptedResume);
+    } catch (error) {
+      if (error instanceof ExportValidationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: error.kind === "too_large" ? 413 : 400 }
+        );
+      }
+      throw error;
     }
 
     // Server-side enforcement, independent of whatever the picker UI
@@ -86,6 +130,17 @@ export async function POST(request: NextRequest) {
       headers,
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        { error: "Your resume is too large to export." },
+        { status: 413 }
+      );
+    }
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    }
+
     console.error("PDF export error:", error);
 
     return NextResponse.json(

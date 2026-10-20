@@ -49,6 +49,14 @@ function sanitizeForPdf(value: string): string {
       .replace(/\u2026/g, "...")
       // Zero-width characters / BOM have no visual representation anyway
       .replace(/[\u200B\u200C\u200D\uFEFF]/g, "")
+      // Tab, vertical tab and form feed have no WinAnsi glyph and make
+      // pdf-lib throw when measuring text (tabs are common in text that was
+      // extracted from a PDF). Keep them as a word separator instead.
+      .replace(/[\t\u000B\u000C]/g, " ")
+      // Remaining control characters (C0 except newline, DEL, and the C1
+      // range) cannot be encoded either; drop them. "\n" is kept on purpose:
+      // wrapText splits on it.
+      .replace(/[\u0000-\u0008\u000E-\u001F\u007F-\u009F]/g, "")
       // Catch-all: anything else outside Latin-1 (WinAnsi/CP1252's range)
       // gets dropped rather than crashing the whole export.
       .replace(/[^\u0000-\u00FF]/g, "")
@@ -375,9 +383,7 @@ export class PdfLayoutEngine {
   renderResume(resume: TailoredResume) {
     const firstSection: TailoredResumeSection | undefined =
       resume.sections?.[0];
-    const titleLine = firstSection?.lines?.find((line) =>
-      cleanText(line.text)
-    );
+    const titleLine = firstSection?.lines?.find((line) => cleanText(line.text));
     const title = cleanText(titleLine?.text) || "Resume";
 
     const nameLineHeight = this.scale(NAME_LINE_HEIGHT);

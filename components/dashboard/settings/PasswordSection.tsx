@@ -7,6 +7,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
+// Maps Supabase Auth error codes to messages a person can act on. Only codes
+// whose text is safe to show are surfaced; everything else stays generic.
+function passwordUpdateMessage(error: { code?: string; message?: string }) {
+  const code = error.code ?? "";
+
+  if (code.startsWith("current_password")) {
+    return "Current password is incorrect.";
+  }
+  if (code === "same_password") {
+    return "Your new password must be different from your current one.";
+  }
+  if (code === "weak_password") {
+    return (
+      error.message ||
+      "That password is too weak. Try a longer one with a mix of characters."
+    );
+  }
+  if (code === "reauthentication_needed") {
+    return "For your security, please sign out, sign back in, and try again.";
+  }
+  return "Couldn't update your password. Please try again.";
+}
+
 export function PasswordSection({ email }: { email: string }) {
   const supabase = createClient();
 
@@ -31,12 +54,21 @@ export function PasswordSection({ email }: { email: string }) {
 
     setLoading(true);
 
-    // Supabase's updateUser() will happily change the password for
-    // whatever session is currently active - it does NOT ask for the
-    // current password on its own. Verifying it explicitly here (rather
-    // than skipping straight to updateUser) means a hijacked-but-not-yet-
-    // detected session can't be used to lock the real owner out by
-    // itself changing the password without knowing it.
+    // Two layers, on purpose:
+    //
+    // 1) UX check (this block): re-sign-in with the typed current password so
+    //    a typo gets a clear message. This runs in the BROWSER, so it is not a
+    //    security control - anyone holding a session token can skip this UI
+    //    and call the Supabase Auth API directly.
+    //
+    // 2) Server enforcement (the updateUser call below): it also sends
+    //    `current_password`. When "Require current password when changing
+    //    password" is enabled in the Supabase dashboard (Authentication ->
+    //    Sign In / Providers -> Email), Supabase itself rejects the change
+    //    unless that password is correct - THAT is what stops a stolen
+    //    session. See docs/SUPABASE_AUTH_SETTINGS.md. Until the setting is on,
+    //    the server ignores the field and only layer 1 applies.
+
     const { error: verifyError } = await supabase.auth.signInWithPassword({
       email,
       password: currentPassword,
@@ -50,10 +82,11 @@ export function PasswordSection({ email }: { email: string }) {
 
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
+      current_password: currentPassword,
     });
 
     if (updateError) {
-      setError("Couldn't update your password. Please try again.");
+      setError(passwordUpdateMessage(updateError));
       setLoading(false);
       return;
     }
@@ -80,8 +113,8 @@ export function PasswordSection({ email }: { email: string }) {
         Password &amp; Security
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Update your password. You&apos;ll stay signed in here; other
-        devices will be signed out.
+        Update your password. You&apos;ll stay signed in here; other devices
+        will be signed out.
       </p>
 
       {error && (

@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       // the full list would let a free user read paid suggestions directly.
       const visibleBulletRewrites = allBulletRewrites.slice(0, suggestionLimit);
 
-      // 5. Save the FULL result to the database
+      // 5. Save the result (visible rewrites only) to the database
       const { data: scanData, error: scanError } = await supabase
         .from("scans")
         .insert({

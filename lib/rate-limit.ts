@@ -76,3 +76,12 @@ export const CREATE_ORDER_RATE_LIMITS: RateLimitRule[] = [
   { action: "create_order_burst", maxRequests: 3, windowSeconds: 60 },
   { action: "create_order_hourly", maxRequests: 20, windowSeconds: 3600 },
 ];
+
+/**
+ * Rate limit rules for /api/export. Each call runs a PDF layout engine on
+ * the server. Generous enough for someone flipping between templates.
+ */
+export const EXPORT_RATE_LIMITS: RateLimitRule[] = [
+  { action: "export_burst", maxRequests: 10, windowSeconds: 60 },
+  { action: "export_hourly", maxRequests: 60, windowSeconds: 3600 },
+];

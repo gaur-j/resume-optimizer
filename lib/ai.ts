@@ -184,8 +184,8 @@ Respond with ONLY valid JSON, no markdown, no code blocks, no explanation:
   "missing_keywords": ["AWS", "Docker", "PostgreSQL"],
   "critical_issues": ["No quantified achievements", "Missing LinkedIn URL"],
   "quick_wins": ["Add 3 missing keywords to skills section", "Quantify at least 2 bullet points with metrics"]
-
-  ${UNTRUSTED_INPUT_NOTICE}`;
+}
+${UNTRUSTED_INPUT_NOTICE}`;
 
   const userPrompt = `RESUME:\n${fenceUntrusted(
     "resume",
