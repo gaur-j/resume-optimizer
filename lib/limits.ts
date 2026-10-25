@@ -27,3 +27,8 @@ export const MAX_EXPORT_LINES = 600;
 export const MAX_EXPORT_LINE_CHARS = 1_500;
 export const MAX_EXPORT_HEADING_CHARS = 100;
 export const MAX_EXPORT_TOTAL_CHARS = 60_000;
+
+// Profile display name. Supabase stores user_metadata inside the signed-in
+// user's JWT/cookie and offers no server-side length cap, so the app limits
+// what it writes AND what it renders.
+export const MAX_DISPLAY_NAME_CHARS = 100;

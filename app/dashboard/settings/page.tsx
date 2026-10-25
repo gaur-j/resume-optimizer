@@ -5,6 +5,7 @@ import { getPlanName } from "@/lib/plan";
 import { ProfileSection } from "@/components/dashboard/settings/ProfileSection";
 import { PasswordSection } from "@/components/dashboard/settings/PasswordSection";
 import { BillingSection } from "@/components/dashboard/settings/BillingSection";
+import { safeDisplayName } from "@/lib/security";
 
 export const metadata: Metadata = {
   title: "Account Settings",
@@ -31,10 +32,10 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
-  const name =
-    (user.user_metadata?.full_name as string | undefined) ||
-    (user.user_metadata?.name as string | undefined) ||
-    "";
+  const name = safeDisplayName(
+    user.user_metadata?.full_name,
+    safeDisplayName(user.user_metadata?.name, "")
+  );
   // OAuth-only accounts (Google, etc.) have no password to change - only
   // offer the password form to accounts that actually have one.
   const providers = user.app_metadata?.providers as string[] | undefined;
@@ -45,9 +46,7 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Account Settings
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground">Account Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your profile, password, and billing.
         </p>

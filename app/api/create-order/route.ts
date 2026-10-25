@@ -8,6 +8,7 @@ import { sanitizeAttribution } from "@/lib/security";
 import Razorpay from "razorpay";
 import type { Orders } from "razorpay/dist/types/orders";
 import type { INormalizeError } from "razorpay/dist/types/api";
+import { reportError } from "@/lib/monitoring";
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
@@ -122,6 +123,8 @@ export async function POST(request: NextRequest) {
 
     if (paymentError) {
       console.error("Error saving payment:", paymentError);
+      // A Razorpay order exists but its database row could not be saved.
+      await reportError("payment.create_order.save_failed", paymentError);
       return NextResponse.json(
         { error: "Failed to create order" },
         { status: 500 }
@@ -147,6 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("Order creation error:", error);
+    await reportError("payment.create_order.error", error);
     return NextResponse.json(
       { error: "Failed to create order" },
       { status: 500 }

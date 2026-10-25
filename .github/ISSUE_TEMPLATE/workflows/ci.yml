@@ -1,0 +1,98 @@
+name: CI
+
+# Runs on every push to main and on every pull request. The point is to find
+# out about a broken lockfile, a failing type-check, or a weakened database
+# security rule from a red check in seconds - not from a failed deploy.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: these jobs only need to read the code.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Lint, types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Actions are pinned to a full commit SHA (the comment is the version) so
+      # a moved or hijacked tag cannot change what runs here.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      # `npm ci` fails if package.json and package-lock.json disagree or if a
+      # lockfile entry is malformed - exactly what broke a deploy once.
+      - name: Install (exact, from the lockfile)
+        run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Unit and route tests
+        run: npm test
+
+      - name: Dependency audit (production, fail on critical)
+        run: npm audit --omit=dev --audit-level=critical
+
+      # The build needs no real secrets: these placeholders only satisfy
+      # code that reads the variables at build time.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_APP_URL: https://ci.example.test
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_test_ci
+          RAZORPAY_SECRET: ci-placeholder
+          RAZORPAY_WEBHOOK_SECRET: ci-placeholder
+          GROQ_API_KEY: ci-placeholder
+          GROQ_MODEL: ci-placeholder
+          GEMINI_API_KEY: ci-placeholder
+          GEMINI_MODEL: ci-placeholder
+
+  database:
+    name: Database security tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci-postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci-postgres
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      # Row-level security, revoked privileges and atomic payment crediting
+      # live in SQL. This applies schema.sql + every migration to a clean
+      # database and proves clients still cannot mint credits or forge payments.
+      - name: Row-level-security, payments and concurrency tests
+        run: bash tests/db/run.sh

@@ -104,6 +104,10 @@ export default function DashboardPage() {
   }, [supabase]);
 
   useEffect(() => {
+    // Data fetch on mount: fetchCredits only sets state AFTER awaiting the
+    // network, never synchronously, so the cascading-render this rule guards
+    // against cannot happen here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCredits();
   }, [fetchCredits]);
 
@@ -324,7 +328,10 @@ export default function DashboardPage() {
 
                     {hasResume && (
                       <div className="mt-2.5 flex items-center gap-2 text-xs text-success">
-                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <CheckCircle2
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                         Resume content is ready for analysis.
                       </div>
                     )}

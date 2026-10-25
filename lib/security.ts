@@ -79,3 +79,49 @@ export function sanitizeAttribution(value: unknown): Attribution | null {
 
   return Object.keys(clean).length > 0 ? clean : null;
 }
+
+/**
+ * user_metadata (full_name, avatar_url, ...) is writable by the signed-in user
+ * straight through the Supabase Auth API, so it is untrusted even though it
+ * "belongs" to them: it can be huge, contain control characters, or be a
+ * non-string. These helpers reduce it to something safe to render.
+ */
+export function safeDisplayName(
+  value: unknown,
+  fallback = "",
+  maxLength = 100
+): string {
+  if (typeof value !== "string") return fallback;
+
+  const cleaned = value
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
+  return cleaned || fallback;
+}
+
+/** Only plain https URLs (no embedded credentials), bounded in length. */
+export function safeHttpsUrl(
+  value: unknown,
+  maxLength = 500
+): string | undefined {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > maxLength
+  ) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) {
+      return undefined;
+    }
+    return url.href;
+  } catch {
+    return undefined;
+  }
+}

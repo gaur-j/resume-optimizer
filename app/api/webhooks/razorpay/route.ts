@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { grantCreditsForOrder } from "@/lib/payments";
 import { safeEqual } from "@/lib/security";
+import { reportError } from "@/lib/monitoring";
 
 /**
  * Razorpay webhook — the safety net behind /api/verify-payment.
@@ -86,6 +87,15 @@ export async function POST(request: NextRequest) {
     // here makes Razorpay retry the webhook repeatedly, which won't
     // help if the underlying issue is "payment row doesn't exist yet."
     console.error("Webhook could not grant credits:", result.reason, orderId);
+    // Returns 200 below, so Razorpay will NOT retry: a human has to know.
+    await reportError(
+      "razorpay.webhook.grant_failed",
+      new Error(result.reason),
+      {
+        orderId,
+      }
+    );
+
     return NextResponse.json({ received: true, error: result.reason });
   }
 

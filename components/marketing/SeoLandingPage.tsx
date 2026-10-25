@@ -5,6 +5,7 @@ import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton } from "@/components/auth/AuthTriggers";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ATSPreview } from "@/components/marketing/ATSPreview";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
@@ -74,7 +75,7 @@ export function SeoLandingPage({
       <div className="min-h-screen overflow-x-hidden bg-background">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
 
         <nav className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md supports-backdrop-filter:bg-background/75">

@@ -23,9 +23,18 @@ CREATE TABLE IF NOT EXISTS users (
   scan_credits INT NOT NULL DEFAULT 3,
   total_paid_scans INT NOT NULL DEFAULT 0,
   total_spent_inr INT NOT NULL DEFAULT 0,
+  -- Written by the billing webhook (service role) only; clients cannot UPDATE
+  -- users. Only the value 'active' unlocks paid features (lib/plan.ts).
+  subscription_status TEXT
+    CONSTRAINT users_subscription_status_format
+    CHECK (subscription_status IS NULL OR subscription_status ~ '^[a-z_]{1,32}$'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- For databases created before this column existed (idempotent). See
+-- migrations/004_followups.sql.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status TEXT;
 
 -- ── scans ──────────────────────────────────────────────────
 -- One row per resume analysis run through /api/analyze.
@@ -133,15 +142,20 @@ CREATE INDEX IF NOT EXISTS referrals_referrer_id_idx ON referrals(referrer_id);
 -- This is a belt-and-suspenders companion to the self-heal logic
 -- already in app/api/user/route.ts — with this trigger in place,
 -- the self-heal path becomes a fallback rather than the only path.
+-- SECURITY DEFINER functions must pin search_path (see migrations/004_followups.sql).
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.users (id, email, scan_credits)
   VALUES (NEW.id, NEW.email, 3)
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

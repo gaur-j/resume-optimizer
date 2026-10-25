@@ -10,6 +10,7 @@ import {
   ExportValidationError,
   validateExportResume,
 } from "@/lib/export-validate";
+import { reportError } from "@/lib/monitoring";
 
 export const runtime = "nodejs";
 
@@ -142,6 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("PDF export error:", error);
+    await reportError("export.error", error);
 
     return NextResponse.json(
       {

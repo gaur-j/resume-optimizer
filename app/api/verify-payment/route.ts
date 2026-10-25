@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 import { grantCreditsForOrder } from "@/lib/payments";
 import { safeEqual } from "@/lib/security";
+import { reportError } from "@/lib/monitoring";
 
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
@@ -84,6 +85,14 @@ export async function POST(request: NextRequest) {
 
     if (!result.granted) {
       console.error("Credit grant failed:", result.reason, razorpay_order_id);
+      await reportError(
+        "payment.verify.grant_failed",
+        new Error(result.reason),
+        {
+          orderId: razorpay_order_id,
+        }
+      );
+
       return NextResponse.json(
         { error: "Failed to add credits" },
         { status: 500 }
@@ -106,6 +115,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Payment verification error:", error);
+    await reportError("payment.verify.error", error);
     return NextResponse.json(
       { error: "Payment verification failed" },
       { status: 500 }

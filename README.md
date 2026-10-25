@@ -43,18 +43,19 @@ Resume Optimizer helps job seekers quickly transform one resume into multiple ro
 ### Home
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./public/screenshots/home-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="./public/screenshots/home-light.png">
-  <img alt="Home screenshot" src="./public/screenshots/home-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/home-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/screenshots/home-light.png">
+  <img alt="Home screenshot" src="./docs/screenshots/home-light.png">
+
 </picture>
 
 ### Upload Resume
 
-![Resume Upload](./public/screenshots/resume-upload.png)
+![Resume Upload](./docs/screenshots/resume-upload.png)
 
 ### Optimized Result
 
-![Optimized Result](./public/screenshots/analyzer.png)
+![Optimized Result](./docs/screenshots/analyzer.png)
 
 ---
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { MAX_DISPLAY_NAME_CHARS } from "@/lib/limits";
 
 export function ProfileSection({
   initialName,
@@ -27,6 +28,13 @@ export function ProfileSection({
     e.preventDefault();
     if (!name.trim()) {
       toast.error("Name can't be empty.");
+      return;
+    }
+
+    if (name.trim().length > MAX_DISPLAY_NAME_CHARS) {
+      toast.error(
+        `Name can't be longer than ${MAX_DISPLAY_NAME_CHARS} characters.`
+      );
       return;
     }
 
@@ -94,6 +102,7 @@ export function ProfileSection({
           <Input
             id="name"
             value={name}
+            maxLength={MAX_DISPLAY_NAME_CHARS}
             onChange={(e) => setName(e.target.value)}
             disabled={savingName}
             className="mt-1"

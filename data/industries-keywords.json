@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "SWE",
+    "name": "SWE",
+    "description": "Develop High Rich Software, Enchance User Exprience with system",
+    "categories": [
+      {
+        "categoryName": "engineering",
+        "keywords": ["swe", "software developer", "software engineer"]
+      },
+      {
+        "categoryName": "software-engineer",
+        "keywords": ["software developer", "swe", "software engineer"]
+      }
+    ],
+    "tips": ["Put license numbers and certifications in a dedicated section."],
+    "faqs": [
+      {
+        "q": "What keywords should a swe resume include?",
+        "a": "stack, projects, impact or problem solving."
+      }
+    ],
+    "relatedIndustrySlugs": ["software-deverloper", "software-engineer"],
+    "relatedRoleSlugs": ["devops-engineer", "full-stack-developer"]
+  }
+]

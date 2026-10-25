@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { MobileSidebar } from "@/components/sidebar/mobile-sidebar";
 import { SidebarProvider } from "@/components/sidebar/sidebar-provider";
+import { safeDisplayName, safeHttpsUrl } from "@/lib/security";
 
 export default async function DashboardLayout({
   children,
@@ -34,12 +35,14 @@ export default async function DashboardLayout({
   }
 
   const accountUser = {
-    name: user.user_metadata?.full_name || user.user_metadata?.name || "User",
+    // user_metadata is user-writable, so it is sanitized before rendering.
+    name: safeDisplayName(
+      user.user_metadata?.full_name,
+      safeDisplayName(user.user_metadata?.name, "User")
+    ),
+
     email: user.email || "",
-    avatarUrl:
-      typeof user.user_metadata?.avatar_url === "string"
-        ? user.user_metadata.avatar_url
-        : undefined,
+    aavatarUrl: safeHttpsUrl(user.user_metadata?.avatar_url),
   };
 
   return (

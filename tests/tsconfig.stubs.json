@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/supabase/server": ["./tests/stubs/supabase-server.ts"],
+      "@/lib/ip-rate-limit": ["./tests/stubs/ip-rate-limit.ts"],
+      "@/*": ["./*"]
+    }
+  }
+}

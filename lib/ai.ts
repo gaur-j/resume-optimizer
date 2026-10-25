@@ -265,16 +265,26 @@ export async function generateSummary(
 Respond with ONLY valid JSON:
 {
   "summary": "Results-driven full-stack developer with 5+ years building scalable web applications using React and Node.js..."
-}`;
+}
 
-  const userPrompt = `RESUME:\n${resumeText}\n\nTARGET ROLE:\n${jobDescription.slice(
-    0,
-    400
+${UNTRUSTED_INPUT_NOTICE}`;
+
+  const userPrompt = `RESUME:\n${fenceUntrusted(
+    "resume",
+    resumeText
+  )}\n\nTARGET ROLE:\n${fenceUntrusted(
+    "job_description",
+    jobDescription.slice(0, 400)
   )}`;
 
   const responseText = await callAI(systemPrompt, userPrompt);
   try {
-    return JSON.parse(cleanJSON(responseText)) as SummaryResult;
+    const parsed = JSON.parse(cleanJSON(responseText));
+    if (typeof parsed?.summary !== "string" || !parsed.summary.trim()) {
+      throw new Error("Invalid summary response");
+    }
+    // Model output is untrusted: keep only the one field, bounded in length.
+    return { summary: parsed.summary.trim().slice(0, 1000) } as SummaryResult;
   } catch {
     console.error(
       `Failed to parse summary response (${responseText.length} chars)`

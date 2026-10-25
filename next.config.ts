@@ -66,7 +66,13 @@ const nextConfig: NextConfig = {
     unoptimized: false,
     formats: ["image/avif", "image/webp"],
   },
-  allowedDevOrigins: ["192.168.209.163", "10.231.124.163"],
+  // LAN addresses for testing the dev server from a phone/tablet. These used
+  // to be hard-coded (and committed); they are machine-specific, so they now
+  // come from the environment: DEV_ALLOWED_ORIGINS="192.168.1.20,10.0.0.5"
+  allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   typescript: {
     tsconfigPath: "./tsconfig.json",
   },

@@ -1,0 +1,14 @@
+# Keep line endings consistent across Windows, macOS and Linux.
+* text=auto
+
+# Shell scripts and SQL are executed by bash / psql, which fail or misbehave on
+# CRLF (e.g. "$'\r': command not found"), so they are always checked out as LF.
+*.sh  text eol=lf
+*.sql text eol=lf
+
+# Never touch binary files.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.woff2 binary

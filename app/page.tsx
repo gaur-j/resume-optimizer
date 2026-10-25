@@ -14,6 +14,7 @@ import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ATSPreview } from "@/components/marketing/ATSPreview";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const FAQS = [
   {
@@ -153,7 +154,7 @@ export default function Home() {
       <div className="min-h-screen overflow-x-hidden bg-background">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
 
         {/* Navigation */}

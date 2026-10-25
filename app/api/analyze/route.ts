@@ -11,6 +11,7 @@ import {
   MAX_RESUME_CHARS,
 } from "@/lib/limits";
 import { PayloadTooLargeError, readLimitedJson } from "@/lib/request-body";
+import { reportError } from "@/lib/monitoring";
 
 interface ConsumeCreditResult {
   success: boolean;
@@ -227,6 +228,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request." }, { status: 400 });
     }
     console.error("Analysis error:", error);
+    await reportError("analyze.error", error);
 
     if (error instanceof Error && error.message.includes("API")) {
       return NextResponse.json(

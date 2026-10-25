@@ -1,0 +1,41 @@
+[
+  {
+    "slug": "software-engineer",
+    "title": "Software Engineer",
+    "pluralTitle": "Software Engineers",
+    "industry": "technology",
+    "category": "engineering",
+    "seniorityLevels": ["junior", "mid", "senior"],
+    "topSkills": ["Python", "JavaScript", "System Design", "Java"],
+    "softSkills": ["Collaboration", "Problem Solving"],
+    "tools": ["GitHub", "Docker", "AWS", "Jira"],
+    "certifications": ["AWS Certified Developer"],
+    "actionVerbs": ["Architected", "Deployed", "Optimized"],
+    "atsTips": [
+      "List languages and frameworks in a dedicated Skills section.",
+      "Mirror exact tool names from the job description, e.g. 'PostgreSQL', not 'databases'."
+    ],
+    "commonMistakes": [
+      "Using a two-column resume layout that breaks parsing.",
+      "Listing 'coding' instead of specific languages."
+    ],
+    "sampleBullets": [
+      "Reduced API latency by 38% by refactoring database queries and adding Redis caching."
+    ],
+    "faqs": [
+      {
+        "q": "What keywords should a Software Engineer resume include?",
+        "a": "Include languages, frameworks, cloud platforms and methodologies such as Agile and CI/CD."
+      }
+    ],
+    "relatedSlugs": [
+      "backend-developer",
+      "full-stack-developer",
+      "devops-engineer"
+    ],
+    "seo": {
+      "metaTitle": "Free ATS Resume Checker for Software Engineers",
+      "metaDescription": "Check your Software Engineer resume against ATS filters. See the top keywords and fixes."
+    }
+  }
+]
