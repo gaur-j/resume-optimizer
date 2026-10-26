@@ -10,7 +10,6 @@ const SERVER_ERROR =
 export async function POST(request: NextRequest) {
   // Gate: only signed-in users. Everything else (size/type checks, parser
   // limits, text extraction) is shared with the public route.
-
   try {
     const supabase = await createServerSupabaseClient();
 
@@ -25,6 +24,7 @@ export async function POST(request: NextRequest) {
     console.error("PDF upload error:", error);
     return jsonError(SERVER_ERROR, 500);
   }
+
   return handlePdfUpload(request, {
     minTextLength: 20,
     extractionLogLabel: "PDF extraction error:",

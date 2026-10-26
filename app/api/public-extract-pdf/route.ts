@@ -26,23 +26,24 @@ export async function POST(request: NextRequest) {
         "Too many uploads. Please wait a few minutes or create an account."
       );
     }
-
+  } catch (error) {
+    console.error("Public PDF extraction error:", error);
     return jsonError(SERVER_ERROR, 500);
-  } catch {
-    return handlePdfUpload(request, {
-      minTextLength: 50,
-      extractionLogLabel: "Public PDF extraction error:",
-      uploadLogLabel: "Public PDF extraction error:",
-      messages: {
-        noFile: "No resume PDF was uploaded.",
-        tooLarge: "Your resume is too large. Please upload a PDF under 5 MB.",
-        notPdf: "This file doesn't appear to be a valid PDF.",
-        unreadable:
-          "We couldn't read this PDF. Please upload a text-based resume PDF.",
-        tooLittleText:
-          "We couldn't find enough readable text in this PDF. Scanned/image resumes aren't supported for the preview.",
-        serverError: SERVER_ERROR,
-      },
-    });
   }
+
+  return handlePdfUpload(request, {
+    minTextLength: 50,
+    extractionLogLabel: "Public PDF extraction error:",
+    uploadLogLabel: "Public PDF extraction error:",
+    messages: {
+      noFile: "No resume PDF was uploaded.",
+      tooLarge: "Your resume is too large. Please upload a PDF under 5 MB.",
+      notPdf: "This file doesn't appear to be a valid PDF.",
+      unreadable:
+        "We couldn't read this PDF. Please upload a text-based resume PDF.",
+      tooLittleText:
+        "We couldn't find enough readable text in this PDF. Scanned/image resumes aren't supported for the preview.",
+      serverError: SERVER_ERROR,
+    },
+  });
 }
