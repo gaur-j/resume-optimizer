@@ -25,6 +25,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 const rolesData = rawRoles as Role[];
 const BASE_PATH = "/ats-resume-checker";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -51,7 +53,6 @@ function safeJsonLd(data: unknown): string {
 
 // ---------- Static generation ----------
 
-// Only the slugs in the JSON exist; anything else returns 404
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
@@ -91,12 +92,14 @@ export async function generateMetadata({
 // ---------- Reusable Card Component ----------
 
 function SectionCard({
+  id,
   icon: Icon,
   title,
   subtitle,
   children,
   className = "",
 }: {
+  id?: string;
   icon?: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle?: string;
@@ -105,20 +108,21 @@ function SectionCard({
 }) {
   return (
     <section
+      id={id}
       className={`rounded-2xl border border-border bg-card p-6 shadow-sm transition-all ${className}`}
     >
       <div className="mb-4 flex items-center gap-2">
         {Icon && (
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Icon className="h-4 w-4" />
           </div>
         )}
         <div>
-          <h2 className="font-mono text-sm font-semibold uppercase tracking-wide text-foreground">
+          <h2 className="font-mono text-lg font-semibold tracking-tight text-foreground">
             {title}
           </h2>
           {subtitle && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
         </div>
       </div>
@@ -141,27 +145,79 @@ export default async function RoleATSCheckerPage({ params }: PageProps) {
     .map((s) => getRole(s))
     .filter((r): r is Role => Boolean(r));
 
-  const faqJsonLd = hasItems(role.faqs)
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: role.faqs.map((f) => ({
-          "@type": "Question",
-          name: f.q,
-          acceptedAnswer: { "@type": "Answer", text: f.a },
-        })),
-      }
-    : null;
+  const pageUrl = `${APP_URL}${BASE_PATH}/${role.slug}`;
+  const hubUrl = `${APP_URL}${BASE_PATH}`;
+
+  // Complete Graph Schema: WebPage + BreadcrumbList + FAQPage
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: `Free ATS Resume Checker for ${plural}`,
+        description:
+          role.seo?.metaDescription ??
+          `Optimize your ${role.title} resume for ATS parsers. Discover required hard skills, missing keywords, and formatting fixes.`,
+        isPartOf: {
+          "@type": "WebSite",
+          "@id": `${APP_URL}/#website`,
+          url: APP_URL,
+          name: "Get ResumeAI",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: APP_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "ATS Resume Checker",
+            item: hubUrl,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: `${role.title} Resume Checker`,
+            item: pageUrl,
+          },
+        ],
+      },
+      ...(hasItems(role.faqs)
+        ? [
+            {
+              "@type": "FAQPage",
+              "@id": `${pageUrl}#faq`,
+              mainEntity: role.faqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: f.a,
+                },
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
 
   return (
     <AuthModalProvider>
       <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
-        {faqJsonLd && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
-          />
-        )}
+        {/* Unified JSON-LD: WebPage + BreadcrumbList + FAQPage */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
+        />
 
         {/* Global Navigation matching Home & Landing pages */}
         <nav className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md supports-backdrop-filter:bg-background/75">
@@ -191,6 +247,39 @@ export default async function RoleATSCheckerPage({ params }: PageProps) {
           </div>
         </nav>
 
+        {/* Visible Breadcrumbs Trail */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8"
+        >
+          <ol className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <li>
+              <Link
+                href="/"
+                className="transition-colors hover:text-foreground"
+              >
+                Home
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link
+                href={BASE_PATH}
+                className="transition-colors hover:text-foreground"
+              >
+                ATS Checker
+              </Link>
+            </li>
+            <li>/</li>
+            <li
+              className="truncate font-medium text-foreground"
+              aria-current="page"
+            >
+              {role.title}
+            </li>
+          </ol>
+        </nav>
+
         {/* Hero Section with Radial Glow & Monospace Heading */}
         <section className="relative overflow-hidden border-b border-border/40">
           <div
@@ -208,195 +297,221 @@ export default async function RoleATSCheckerPage({ params }: PageProps) {
             />
           </div>
 
-          <header className="mx-auto max-w-4xl px-4 pb-12 pt-12 text-center sm:px-6 sm:pb-16 sm:pt-16">
+          <header className="mx-auto max-w-4xl px-4 pb-12 pt-8 text-center sm:px-6 sm:pb-16 sm:pt-12">
             <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3.5 py-1 text-xs font-medium text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               ATS Optimization Guide &amp; Scanner
             </span>
-            <h1 className="mt-3 font-mono text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl text-balance">
+            <h1 className="mt-3 text-balance font-mono text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
               Free ATS Resume Checker for {plural}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {role.title} roles require role-specific ATS keywords. Scan your
-              resume against real {role.industry} job descriptions to identify
-              gaps before applying.
+              resume against recruiter benchmarks for {plural.toLowerCase()} and
+              fix missing terms before applying.
             </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/#upload"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-7 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              >
+                <FileSearch className="mr-2 h-4 w-4" />
+                Scan My Resume Now
+              </Link>
+              <Link
+                href="#skills"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                View Keyword Checklist
+              </Link>
+            </div>
           </header>
         </section>
 
-        {/* Content Body */}
-        <main className="mx-auto max-w-4xl space-y-10 px-4 py-12 sm:px-6">
-          {/* Core Keywords */}
-          <div className="grid gap-6 md:grid-cols-2">
+        {/* Content Container */}
+        <main className="mx-auto max-w-4xl space-y-10 px-4 py-12 sm:px-6 sm:py-16">
+          {/* Top Skills Pill Grid */}
+          {hasItems(role.topSkills) && (
             <SectionCard
+              id="skills"
               icon={Sparkles}
-              title="Top Required Hard Skills"
-              subtitle="Critical keywords parsed by ATS filters"
+              title={`Critical ATS Keywords for ${plural}`}
+              subtitle="Parsers scan specifically for these skills in your work experience and skills sections."
             >
-              <ul className="space-y-2.5">
+              <div className="flex flex-wrap gap-2">
                 {role.topSkills.map((skill) => (
-                  <li
+                  <span
                     key={skill}
-                    className="flex items-center gap-2.5 text-sm font-medium text-foreground/90"
+                    className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary sm:text-sm"
                   >
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-                    <span>{skill}</span>
-                  </li>
+                    {skill}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </SectionCard>
+          )}
 
+          {/* Action Verbs */}
+          {hasItems(role.actionVerbs) && (
             <SectionCard
-              icon={Layers}
+              icon={BookOpen}
               title="Recommended Action Verbs"
-              subtitle="High-impact verbs for achievement bullets"
+              subtitle="Begin bullet points with these verbs to improve ATS readability and recruiter impact."
             >
               <div className="flex flex-wrap gap-2">
                 {role.actionVerbs.map((verb) => (
                   <span
                     key={verb}
-                    className="rounded-lg border border-border bg-secondary/60 px-3 py-1 font-mono text-xs sm:text-sm text-secondary-foreground transition-colors hover:border-primary/40"
+                    className="inline-flex items-center rounded-md border border-border bg-secondary/60 px-2.5 py-1 text-xs font-medium text-secondary-foreground"
                   >
                     {verb}
                   </span>
                 ))}
               </div>
             </SectionCard>
-          </div>
+          )}
 
-          {/* Optional Keyword Groups */}
-          {(hasItems(role.softSkills) ||
-            hasItems(role.tools) ||
-            hasItems(role.certifications)) && (
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+          {/* Tools & Technologies */}
+          {hasItems(role.tools) && (
+            <SectionCard
+              icon={Wrench}
+              title="Standard Tools &amp; Technologies"
+              subtitle="Ensure relevant software appears verbatim in your technical skills block."
+            >
+              <div className="flex flex-wrap gap-2">
+                {role.tools.map((tool) => (
+                  <span
+                    key={tool}
+                    className="inline-flex items-center rounded-md border border-border bg-secondary/60 px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                  >
+                    {tool}
+                  </span>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Soft Skills & Certifications Side-by-Side */}
+          {(hasItems(role.softSkills) || hasItems(role.certifications)) && (
+            <div className="grid gap-6 md:grid-cols-2">
               {hasItems(role.softSkills) && (
                 <SectionCard
-                  icon={BookOpen}
-                  title="Soft Skills"
-                  subtitle="Interpersonal attributes"
+                  icon={Layers}
+                  title="Valued Soft Skills"
+                  subtitle="Contextualize these in your achievement bullets."
                 >
-                  <div className="flex flex-wrap gap-2">
-                    {role.softSkills.map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-lg border border-primary/20 bg-primary/8 px-2.5 py-1 text-xs font-medium text-primary"
+                  <ul className="space-y-2">
+                    {role.softSkills.map((skill) => (
+                      <li
+                        key={skill}
+                        className="flex items-center text-xs text-muted-foreground sm:text-sm"
                       >
-                        {item}
-                      </span>
+                        <CheckCircle2 className="mr-2 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span>{skill}</span>
+                      </li>
                     ))}
-                  </div>
-                </SectionCard>
-              )}
-
-              {hasItems(role.tools) && (
-                <SectionCard
-                  icon={Wrench}
-                  title="Tools to List"
-                  subtitle="Technical software & platforms"
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {role.tools.map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-lg border border-border bg-muted/60 px-2.5 py-1 font-mono text-xs text-foreground/90"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+                  </ul>
                 </SectionCard>
               )}
 
               {hasItems(role.certifications) && (
                 <SectionCard
                   icon={Award}
-                  title="Certifications"
-                  subtitle="Recognized credentials"
+                  title="Target Certifications"
+                  subtitle="Commonly filtered certifications for this role."
                 >
-                  <div className="flex flex-wrap gap-2">
-                    {role.certifications.map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning-foreground"
+                  <ul className="space-y-2">
+                    {role.certifications.map((cert) => (
+                      <li
+                        key={cert}
+                        className="flex items-center text-xs text-muted-foreground sm:text-sm"
                       >
-                        {item}
+                        <Award className="mr-2 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span>{cert}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </SectionCard>
+              )}
+            </div>
+          )}
+
+          {/* ATS Tips & Common Pitfalls Side-by-Side */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {hasItems(role.atsTips) && (
+              <SectionCard
+                icon={CheckCircle2}
+                title="Formatting &amp; Optimization Tips"
+                subtitle="Guidelines to clear ATS parsing algorithms."
+                className="border-primary/20 bg-primary/[0.02]"
+              >
+                <ul className="space-y-2.5">
+                  {role.atsTips.map((tip, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start text-xs text-muted-foreground sm:text-sm"
+                    >
+                      <span className="mr-2 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-semibold text-primary">
+                        ✓
                       </span>
-                    ))}
-                  </div>
-                </SectionCard>
-              )}
-            </div>
-          )}
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SectionCard>
+            )}
 
-          {/* Tips & Common Mistakes */}
-          {(hasItems(role.atsTips) || hasItems(role.commonMistakes)) && (
-            <div className="grid gap-6 md:grid-cols-2">
-              {hasItems(role.atsTips) && (
-                <SectionCard
-                  icon={CheckCircle2}
-                  title={`ATS Tips for ${plural}`}
-                  subtitle="Best practices for higher match rates"
-                >
-                  <ul className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-                    {role.atsTips.map((tip) => (
-                      <li key={tip} className="flex items-start gap-2.5">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </SectionCard>
-              )}
+            {hasItems(role.commonMistakes) && (
+              <SectionCard
+                icon={AlertCircle}
+                title="Common ATS Mistakes to Avoid"
+                subtitle="Errors that cause automatic applicant rejections."
+                className="border-destructive/20 bg-destructive/[0.02]"
+              >
+                <ul className="space-y-2.5">
+                  {role.commonMistakes.map((mistake, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start text-xs text-muted-foreground sm:text-sm"
+                    >
+                      <span className="mr-2 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-destructive/20 text-[10px] font-semibold text-destructive">
+                        ✕
+                      </span>
+                      <span>{mistake}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SectionCard>
+            )}
+          </div>
 
-              {hasItems(role.commonMistakes) && (
-                <SectionCard
-                  icon={AlertCircle}
-                  title="Common Mistakes to Avoid"
-                  subtitle="Formatting and content errors that hurt parsing"
-                >
-                  <ul className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-                    {role.commonMistakes.map((m) => (
-                      <li key={m} className="flex items-start gap-2.5">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                        <span>{m}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </SectionCard>
-              )}
-            </div>
-          )}
-
-          {/* Sample Bullets */}
+          {/* Sample High-Scoring Bullets */}
           {hasItems(role.sampleBullets) && (
             <SectionCard
               icon={Sparkles}
-              title={`Sample ${role.title} Resume Bullets`}
-              subtitle="Formula: Action Verb + Context + Measurable Outcome"
+              title={`High-Scoring Resume Bullets for ${plural}`}
+              subtitle="Use these battle-tested phrasing examples as inspiration for your work history."
             >
               <div className="space-y-3">
-                {role.sampleBullets.map((bullet) => (
+                {role.sampleBullets.map((bullet, i) => (
                   <div
-                    key={bullet}
-                    className="rounded-xl border border-border/80 border-l-4 border-l-primary bg-muted/30 p-4 font-mono text-xs sm:text-sm leading-relaxed text-foreground/90"
+                    key={i}
+                    className="rounded-xl border-l-4 border-l-primary bg-secondary/30 p-4 text-xs leading-relaxed text-foreground sm:text-sm"
                   >
-                    {bullet}
+                    &ldquo;{bullet}&rdquo;
                   </div>
                 ))}
               </div>
             </SectionCard>
           )}
 
-          {/* Hero-matched CTA Card */}
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 sm:p-12 text-center shadow-md">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,color-mix(in_oklab,var(--primary)_16%,transparent),transparent_70%)]"
-            />
-            <h2 className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Test Your {role.title} Resume Now
+          {/* Mid-Page Scan CTA Banner */}
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center sm:p-10">
+            <h2 className="font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Ready to Test Your {role.title} Resume?
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
               Upload your PDF resume and target job description to get a
               comprehensive ATS score, matched/missing keywords, and instant AI
               bullet rewrites.
@@ -419,7 +534,7 @@ export default async function RoleATSCheckerPage({ params }: PageProps) {
           {hasItems(role.faqs) && (
             <section className="space-y-4">
               <div>
-                <h2 className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                <h2 className="font-mono text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                   {role.title} Resume FAQs
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -468,7 +583,7 @@ export default async function RoleATSCheckerPage({ params }: PageProps) {
                     href={`${BASE_PATH}/${r.slug}`}
                     className="group flex items-center justify-between rounded-xl border border-border bg-card p-3.5 transition-all hover:border-primary/50 hover:bg-secondary/40"
                   >
-                    <span className="truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                    <span className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-primary sm:text-sm">
                       {r.title}
                     </span>
                     <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />

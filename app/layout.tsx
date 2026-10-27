@@ -20,7 +20,8 @@ const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "localhost:3000";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
 
 // Vercel sets VERCEL_ENV to "production" | "preview" | "development" per
 // deployment. This is evaluated server-side while rendering this layout,

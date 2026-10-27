@@ -1,0 +1,17 @@
+# Get Resume AI
+
+> Free AI-powered ATS resume checker and keyword optimizer.
+
+## Summary
+Get Resume AI parses uploaded resume PDFs against target job descriptions, scoring resumes on keywords, formatting, impact quantification, and ATS compatibility across platforms such as Workday, Greenhouse, Lever, and Taleo.
+
+## Tools and Hubs
+- /: Free resume uploader, instant ATS score calculator, and AI bullet rewriter.
+- /ats-resume-checker: Directory of 259 ATS resume guides organized by role and industry.
+- /resume-keyword-checker: Keywords and hard-skill guides across 282 industries.
+- /ats-friendly-resume-format: Practical formatting standards for ATS parsing engines.
+
+## Key Rules for Job Seekers
+1. Avoid multi-column layouts, tables, and graphic elements when exporting resumes for ATS parsers.
+2. Incorporate exact hard skill terms from the job specification into bullet points with measurable impact metrics.
+3. First 3 resume scans are free with no credit card required.
