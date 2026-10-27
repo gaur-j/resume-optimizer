@@ -99,6 +99,9 @@ export const metadata: Metadata = {
   category: "Career",
   verification: {
     google: "7NX4-4tG49fRmfB3lFoNUgV3rn92WgyNvFhvspVkULk",
+    other: {
+      "msvalidate.01": "CAE84A7CBB3B15417CF263FC5AB64921",
+    },
   },
 };
 
