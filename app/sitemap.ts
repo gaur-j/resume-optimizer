@@ -24,13 +24,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${APP_URL}/ats-resume-checker`,
+      url: `${APP_URL}/ats-resume`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: `${APP_URL}/resume-keyword-checker`,
+      url: `${APP_URL}/resume-keyword`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
@@ -64,7 +64,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 2. Programmatic ATS Role Checker pages (259 pages)
   const roleRoutes: MetadataRoute.Sitemap = (rolesData as RoleSlug[]).map(
     (role) => ({
-      url: `${APP_URL}/ats-resume-checker/${role.slug}`,
+      url: `${APP_URL}/ats-resume/${role.slug}`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
@@ -75,7 +75,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const industryRoutes: MetadataRoute.Sitemap = (
     industriesData as IndustrySlug[]
   ).map((ind) => ({
-    url: `${APP_URL}/resume-keyword-checker/${ind.slug}`,
+    url: `${APP_URL}/resume-keyword/${ind.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly",
     priority: 0.8,
