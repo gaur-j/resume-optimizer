@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Layers,
   FileText,
+  ArrowRight,
   CheckCircle2,
 } from "lucide-react";
 
@@ -20,6 +21,10 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { ATSPreview } from "@/components/marketing/ATSPreview";
 
 const rolesData = rawRoles as Role[];
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
+const BASE_PATH = "/ats-resume";
 
 const CATEGORY_NAMES: Record<string, string> = {
   engineering: "Engineering & Tech",
@@ -107,7 +112,7 @@ export default function AtsResumeCheckerHubPage() {
         name: "ATS Resume Checker by Job Role",
         description:
           "Free ATS resume checker tailored for 250+ specific job roles. Review missing keywords and formatting standards.",
-        url: "https://getresume-ai.vercel.app/ats-resume-checker",
+        url: `${APP_URL}${BASE_PATH}`,
       },
       {
         "@type": "BreadcrumbList",
@@ -116,13 +121,13 @@ export default function AtsResumeCheckerHubPage() {
             "@type": "ListItem",
             position: 1,
             name: "Home",
-            item: "https://getresume-ai.vercel.app/",
+            item: `${APP_URL}/`,
           },
           {
             "@type": "ListItem",
             position: 2,
             name: "ATS Resume Checker",
-            item: "https://getresume-ai.vercel.app/ats-resume-checker",
+            item: `${APP_URL}${BASE_PATH}`,
           },
         ],
       },
@@ -286,7 +291,7 @@ export default function AtsResumeCheckerHubPage() {
                     {group.roles.map((role) => (
                       <Link
                         key={role.slug}
-                        href={`/ats-resume-checker/${role.slug}`}
+                        href={`${BASE_PATH}/${role.slug}`}
                         className="group flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-secondary/40 hover:shadow-sm"
                       >
                         <div>
@@ -325,6 +330,28 @@ export default function AtsResumeCheckerHubPage() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        {/* Cross-Link Callout to Role Checkers */}
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:flex-row sm:p-8">
+            <div>
+              <h3 className="font-mono text-lg font-bold text-foreground">
+                Looking for specific job role screening rules?
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                Explore our ATS Resume Checker with 250+ role-tailored guides,
+                parser breakdowns, and formatting checklists.
+              </p>
+            </div>
+            <Link
+              href="/resume-keyword"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              Browse Role Checkers
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </section>
 

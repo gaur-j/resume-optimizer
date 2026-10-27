@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const GUIDE_LINKS = [
-  { href: "/ats-resume-checker", label: "ATS resume checker" },
+  { href: "/ats-resume", label: "ATS resume checker" },
   { href: "/ats-friendly-resume-format", label: "ATS-friendly resume format" },
-  { href: "/resume-keyword-checker", label: "Resume keyword checker" },
+  { href: "/resume-keyword", label: "Resume keyword checker" },
 ] as const;
 
 const LEGAL_LINKS = [

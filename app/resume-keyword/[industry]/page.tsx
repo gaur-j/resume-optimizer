@@ -25,8 +25,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 const industriesData = rawIndustries as Industry[];
 const rolesData = rawRoles as Role[];
 
-const BASE_PATH = "/resume-keyword-checker";
-const ROLE_PATH = "/ats-resume-checker";
+const BASE_PATH = "/resume-keyword";
+const ROLE_PATH = "/ats-resume";
 
 interface PageProps {
   params: Promise<{ industry: string }>;

@@ -24,7 +24,7 @@ import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
 import { SiteFooter } from "@/components/SiteFooter";
 
 const rolesData = rawRoles as Role[];
-const BASE_PATH = "/ats-resume-checker";
+const BASE_PATH = "/ats-resume";
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
 

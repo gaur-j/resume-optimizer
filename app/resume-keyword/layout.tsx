@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 const TITLE = "Resume Keyword Checker by Industry & Role | Get Resume AI";
 const DESCRIPTION =
   "Find high-impact resume keywords for 280+ industries and roles. Scan your resume to discover missing hard skills, software tools, and action verbs to maximize your ATS match score.";
-const PATH = "/resume-keyword-checker";
+const PATH = "/resume-keyword";
 
 export const metadata: Metadata = {
   title: TITLE,

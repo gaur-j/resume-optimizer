@@ -25,7 +25,7 @@ import { ATSPreview } from "@/components/marketing/ATSPreview";
 const industriesData = rawIndustries as Industry[];
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
-const BASE_PATH = "/resume-keyword-checker";
+const BASE_PATH = "/resume-keyword";
 
 // The 23 major broad industry sectors from your dataset
 const CORE_SECTOR_SLUGS = new Set([
@@ -511,7 +511,7 @@ export default function ResumeKeywordCheckerHubPage() {
               </p>
             </div>
             <Link
-              href="/ats-resume-checker"
+              href="/ats-resume"
               className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
             >
               Browse Role Checkers
