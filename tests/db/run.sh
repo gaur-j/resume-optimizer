@@ -71,9 +71,9 @@ if [ "$(psql -X -w -At -d postgres -c "SELECT rolsuper FROM pg_roles WHERE rolna
   exit 3
 fi
 
+DB="rls_test_$$"
 psql -X -w -q -d postgres -c "CREATE DATABASE $DB"
-cleanup() { psql -X -w -q -d postgres -c "DROP DATABASE IF EXISTS $DB" >/dev/null 2>&1 || true;
-
+cleanup() { psql -X -w -q -d postgres -c "DROP DATABASE IF EXISTS $DB" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 export PGDATABASE="$DB"
 

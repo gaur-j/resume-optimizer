@@ -39,7 +39,18 @@ SELECT check_name, ok FROM (VALUES
   -- 003: order inserts write payments.attribution
   ('003 payments.attribution column exists',
      EXISTS (SELECT 1 FROM information_schema.columns
-             WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'attribution'))
+             WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'attribution')),
+  -- 004: subscription column + every SECURITY DEFINER function pins its search_path
+  ('004 users.subscription_status column exists',
+     EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_status')),
+  ('004 authenticated cannot write users.subscription_status',
+     COALESCE(NOT has_column_privilege('authenticated', 'public.users', 'subscription_status', 'UPDATE'), false)),
+  ('004 every SECURITY DEFINER function pins search_path',
+     NOT EXISTS (
+       SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+       WHERE n.nspname = 'public' AND p.prosecdef
+         AND NOT EXISTS (SELECT 1 FROM unnest(COALESCE(p.proconfig, '{}')) c WHERE c LIKE 'search_path=%')))
 ) AS t(check_name, ok);
 
 -- Past-abuse review (rows here deserve a look; zero rows is the good answer):

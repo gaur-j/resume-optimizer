@@ -42,7 +42,7 @@ export default async function DashboardLayout({
     ),
 
     email: user.email || "",
-    aavatarUrl: safeHttpsUrl(user.user_metadata?.avatar_url),
+    avatarUrl: safeHttpsUrl(user.user_metadata?.avatar_url),
   };
 
   return (
