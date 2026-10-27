@@ -99,27 +99,72 @@ export default async function IndustryKeywordsPage({ params }: PageProps) {
     .map((s) => rolesData.find((r) => r.slug === s))
     .filter((r): r is Role => Boolean(r));
 
-  const faqJsonLd = hasItems(data.faqs)
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: data.faqs.map((f) => ({
-          "@type": "Question",
-          name: f.q,
-          acceptedAnswer: { "@type": "Answer", text: f.a },
-        })),
-      }
-    : null;
+  const pageUrl = `${
+    process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app"
+  }${BASE_PATH}/${data.slug}`;
+  const hubUrl = `${
+    process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app"
+  }${BASE_PATH}`;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name:
+          data.seo?.metaTitle ?? `${data.name} Resume Keywords | Get Resume AI`,
+        description: data.description,
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item:
+              process.env.NEXT_PUBLIC_APP_URL ||
+              "https://getresume-ai.vercel.app",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Resume Keyword Checker",
+            item: hubUrl,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: data.name,
+            item: pageUrl,
+          },
+        ],
+      },
+      ...(hasItems(data.faqs)
+        ? [
+            {
+              "@type": "FAQPage",
+              mainEntity: data.faqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
 
   return (
     <AuthModalProvider>
       <div className="min-h-screen bg-background text-foreground">
-        {faqJsonLd && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
-          />
-        )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
+        />
 
         {/* Global Navigation matching Home & Landing pages */}
         <nav className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-md supports-backdrop-filter:bg-background/75">
@@ -147,6 +192,39 @@ export default async function IndustryKeywordsPage({ params }: PageProps) {
               <ThemeToggle />
             </div>
           </div>
+        </nav>
+
+        {/* Visible Breadcrumbs Trail */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8"
+        >
+          <ol className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <li>
+              <Link
+                href="/"
+                className="transition-colors hover:text-foreground"
+              >
+                Home
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link
+                href={BASE_PATH}
+                className="transition-colors hover:text-foreground"
+              >
+                Keyword Checker
+              </Link>
+            </li>
+            <li>/</li>
+            <li
+              className="truncate font-medium text-foreground"
+              aria-current="page"
+            >
+              {data.name}
+            </li>
+          </ol>
         </nav>
 
         {/* Hero Header */}
