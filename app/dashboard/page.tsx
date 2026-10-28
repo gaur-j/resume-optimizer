@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { AlertCircle, CheckCircle2, FileSearch, Sparkles } from "lucide-react";
@@ -90,18 +91,21 @@ export default function DashboardPage() {
 
       if (fetchError) {
         console.error("Failed to fetch credits:", fetchError);
-        setCredits(0);
+        // Unknown balance is NOT zero: don't open the buy modal on a load error.
+        setCredits(null);
+        toast.error("Couldn't load your credits. Please refresh to try again.");
         return;
       }
 
       setCredits(data?.scan_credits ?? 0);
     } catch (err) {
       console.error("Failed to fetch credits:", err);
-      setCredits(0);
+      setCredits(null);
+      toast.error("Couldn't load your credits. Please refresh to try again.");
     } finally {
       setCreditsLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     // Data fetch on mount: fetchCredits only sets state AFTER awaiting the

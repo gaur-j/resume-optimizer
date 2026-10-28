@@ -111,7 +111,7 @@ export default function RefundPolicyPage() {
         <p className="text-muted-foreground leading-relaxed">
           For refund requests or payment issues, email{" "}
           <a
-            href="mailto:support@yourdomain.com"
+            href="mailto:support@getresume-ai.vercel.app"
             className="text-primary underline underline-offset-4"
           >
             support gjain7524@gmail.com

@@ -165,7 +165,7 @@ export default function PrivacyPolicyPage() {
         <p className="text-muted-foreground leading-relaxed">
           Questions about this policy or your data can be sent to{" "}
           <a
-            href="mailto:support@yourdomain.com"
+            href="mailto:support@getresume-ai.vercel.app"
             className="text-primary underline underline-offset-4"
           >
             support gjain7524@gmail.com

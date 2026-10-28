@@ -107,7 +107,7 @@ async function callAI(
       temperature: 0.3,
       max_tokens: maxTokens,
       response_format: { type: "json_object" }, // forces valid JSON (Groq supports this on Llama 3.3)
-    });
+    }, { timeout: 30_000 });
 
     const text = completion.choices[0]?.message?.content;
     if (text) return text;
@@ -139,7 +139,7 @@ async function callAI(
           maxOutputTokens: maxTokens,
           responseMimeType: "application/json",
         },
-      });
+      }, { timeout: 30_000 });
 
       const result = await model.generateContent(userPrompt);
       const text = result.response.text();
