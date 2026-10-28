@@ -54,6 +54,45 @@ const CSP_RESOURCE_RULES = [
 const enforceFullCsp = process.env.CSP_ENFORCE === "true";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // 1. Hub page redirects
+      {
+        source: "/ats-resume-checker",
+        destination: "/ats-resume",
+        permanent: true, // HTTP 301
+      },
+      {
+        source: "/resume-keyword-checker",
+        destination: "/resume-keyword",
+        permanent: true,
+      },
+      {
+        source: "/resume-keywords",
+        destination: "/resume-keyword",
+        permanent: true,
+      },
+
+      // 2. Wildcard redirects for all 259+ roles and 282+ industries
+      {
+        source: "/ats-resume-checker/:slug*",
+        destination: "/ats-resume/:slug*",
+        permanent: true,
+      },
+      {
+        source: "/resume-keyword-checker/:slug*",
+        destination: "/resume-keyword/:slug*",
+        permanent: true,
+      },
+      {
+        source: "/resume-keywords/:slug*",
+        destination: "/resume-keyword/:slug*",
+        permanent: true,
+      },
+    ];
+  },
+
+  // ... keep the rest of your existing nextConfig (serverExternalPackages, images, headers, etc.)
   // pdf-parse pulls in pdfjs-dist, which dynamically imports its own
   // worker file (pdf.worker.mjs) using a relative path at runtime.
   // Turbopack's bundler moves server code into .next/dev/server/chunks/,
