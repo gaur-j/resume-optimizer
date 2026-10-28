@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import { grantCreditsForOrder } from "@/lib/payments";
 import { safeEqual } from "@/lib/security";
 import { reportError } from "@/lib/monitoring";
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     // (Read-only; goes through the "payments_select_own" RLS policy.)
     const { data: paymentData, error: paymentError } = await supabase
       .from("payments")
-      .select("id")
+      .select("id, amount_inr")
       .eq("razorpay_order_id", razorpay_order_id)
       .eq("user_id", user.id)
       .single();
@@ -73,6 +74,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Payment record not found" },
         { status: 404 }
+      );
+    }
+
+    // The signature only proves checkout completed. Confirm with Razorpay
+    // that the money was actually captured for THIS order and amount.
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_SECRET!,
+    });
+    const rzPayment = await razorpay.payments.fetch(razorpay_payment_id);
+    const expectedPaise = Math.round(Number(paymentData.amount_inr) * 100);
+    if (
+      rzPayment.order_id !== razorpay_order_id ||
+      rzPayment.currency !== "INR" ||
+      Number(rzPayment.amount) !== expectedPaise
+    ) {
+      console.warn("Payment does not match order:", razorpay_order_id);
+      return NextResponse.json({ error: "Payment mismatch" }, { status: 400 });
+    }
+    if (rzPayment.status !== "captured") {
+      // Authorized but not captured yet: the payment.captured webhook
+      // grants the credits once Razorpay captures it.
+      return NextResponse.json(
+        { success: false, pending: true, message: "Payment is processing. Credits will appear shortly." },
+        { status: 202 }
       );
     }
 

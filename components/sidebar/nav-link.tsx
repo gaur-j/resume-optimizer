@@ -22,11 +22,11 @@ export function NavLink({ item }: { item: NavItem }) {
     <Link
       href={item.href}
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
+        "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium",
         "transition-colors duration-200 ease-out motion-reduce:transition-none",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active
-          ? "bg-primary/10 text-primary dark:bg-primary/15"
+          ? "bg-background text-foreground shadow-sm ring-1 ring-border/70"
           : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
         collapsed && "justify-center px-0"
       )}
@@ -34,7 +34,7 @@ export function NavLink({ item }: { item: NavItem }) {
       {/* Active-state rail, animates in/out rather than a filled pill */}
       <span
         className={cn(
-          "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary",
+          "absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary",
           "transition-all duration-200 ease-out motion-reduce:transition-none",
           active ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"
         )}

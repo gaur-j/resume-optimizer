@@ -122,6 +122,9 @@ export function AccountMenu({ user, onSignOut }: AccountMenuProps) {
         sideOffset={8}
         className="w-64"
       >
+        {/* Base UI throws "MenuGroupContext is missing" when a GroupLabel
+            is rendered outside a Group: this was the avatar-click crash. */}
+        <DropdownMenuGroup>
         <DropdownMenuLabel className="font-normal">
           <span className="flex flex-col">
             <span className="truncate text-sm font-medium">{user.name}</span>
@@ -130,6 +133,7 @@ export function AccountMenu({ user, onSignOut }: AccountMenuProps) {
             </span>
           </span>
         </DropdownMenuLabel>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 

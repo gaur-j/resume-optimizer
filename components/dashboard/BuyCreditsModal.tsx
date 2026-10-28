@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { getAttribution } from "@/lib/attribution";
-import { AttributionCapture } from "../analytics/AttributionCapture";
 
 declare global {
   interface Window {
