@@ -19,7 +19,7 @@ import { reportError } from "@/lib/monitoring";
  *
  * Setup required (see the setup guide for full steps):
  * 1. Razorpay Dashboard → Settings → Webhooks → Add new webhook
- *    URL: https://yourdomain.com/api/webhooks/razorpay
+ *    URL: https://getresume-ai.vercel.app/api/webhooks/razorpay
  *    Active events: payment.captured
  * 2. Copy the "Webhook Secret" Razorpay generates and set it as
  *    RAZORPAY_WEBHOOK_SECRET in your environment variables.
@@ -96,7 +96,13 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({ received: true, error: result.reason });
+    // Transient failure (DB down, RPC error): return 5xx so Razorpay
+    // retries. Permanent "not found / not payable" stays 200.
+    const transient = result.reason === "Failed to add credits to user";
+    return NextResponse.json(
+      { received: !transient, error: result.reason },
+      { status: transient ? 503 : 200 }
+    );
   }
 
   return NextResponse.json({
