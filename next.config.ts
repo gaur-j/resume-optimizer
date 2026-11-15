@@ -92,7 +92,6 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // ... keep the rest of your existing nextConfig (serverExternalPackages, images, headers, etc.)
   // pdf-parse pulls in pdfjs-dist, which dynamically imports its own
   // worker file (pdf.worker.mjs) using a relative path at runtime.
   // Turbopack's bundler moves server code into .next/dev/server/chunks/,

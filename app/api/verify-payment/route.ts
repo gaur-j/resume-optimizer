@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     // The signature only proves checkout completed. Confirm with Razorpay
     // that the money was actually captured for THIS order and amount.
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_SECRET!,
     });
     const rzPayment = await razorpay.payments.fetch(razorpay_payment_id);
@@ -97,7 +97,11 @@ export async function POST(request: NextRequest) {
       // Authorized but not captured yet: the payment.captured webhook
       // grants the credits once Razorpay captures it.
       return NextResponse.json(
-        { success: false, pending: true, message: "Payment is processing. Credits will appear shortly." },
+        {
+          success: false,
+          pending: true,
+          message: "Payment is processing. Credits will appear shortly.",
+        },
         { status: 202 }
       );
     }
