@@ -16,6 +16,7 @@ import {
 
 import rawIndustries from "@/data/industries-keywords.json";
 import type { Industry } from "@/types/industry";
+import { SECTOR_SLUGS, industryHref, isSectorSlug } from "@/lib/seo-routes";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
@@ -26,33 +27,6 @@ const industriesData = rawIndustries as Industry[];
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
 const BASE_PATH = "/resume-keyword";
-
-// The 23 major broad industry sectors from your dataset
-const CORE_SECTOR_SLUGS = new Set([
-  "technology",
-  "data-ai",
-  "design",
-  "product-management",
-  "marketing",
-  "sales",
-  "finance",
-  "accounting",
-  "healthcare",
-  "nursing",
-  "pharma-biotech",
-  "education",
-  "legal",
-  "human-resources",
-  "operations-supply-chain",
-  "manufacturing-engineering",
-  "construction",
-  "hospitality",
-  "retail-e-commerce",
-  "government-public-sector",
-  "media-entertainment",
-  "energy-utilities",
-  "customer-support",
-]);
 
 export default function ResumeKeywordCheckerHubPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,7 +40,7 @@ export default function ResumeKeywordCheckerHubPage() {
     const q = searchQuery.trim().toLowerCase();
 
     return industriesData.filter((item) => {
-      const isCore = CORE_SECTOR_SLUGS.has(item.slug);
+      const isCore = isSectorSlug(item.slug);
       if (activeFilter === "core" && !isCore) return false;
       if (activeFilter === "specialized" && isCore) return false;
 
@@ -329,7 +303,7 @@ export default function ResumeKeywordCheckerHubPage() {
                     : "border border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
-                Major Sectors ({CORE_SECTOR_SLUGS.size})
+                Major Sectors ({SECTOR_SLUGS.length})
               </button>
               <button
                 type="button"
@@ -341,7 +315,7 @@ export default function ResumeKeywordCheckerHubPage() {
                 }`}
               >
                 Specialized Roles & Niches (
-                {industriesData.length - CORE_SECTOR_SLUGS.size})
+                {industriesData.length - SECTOR_SLUGS.length})
               </button>
             </div>
 
@@ -371,7 +345,7 @@ export default function ResumeKeywordCheckerHubPage() {
                       return (
                         <Link
                           key={item.slug}
-                          href={`${BASE_PATH}/${item.slug}`}
+                          href={industryHref(item.slug)}
                           className="group flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-secondary/40 hover:shadow-sm"
                         >
                           <div>

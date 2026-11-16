@@ -2,84 +2,57 @@
 import type { MetadataRoute } from "next";
 import rolesData from "@/data/ats-roles.json";
 import industriesData from "@/data/industries-keywords.json";
+import { INDUSTRY_PATH, ROLE_PATH, isSectorSlug } from "@/lib/seo-routes";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://getresume-ai.vercel.app";
 
-interface RoleSlug {
-  slug: string;
-}
+// Search engines compare this date with the last crawl. Stamping every URL
+// with "now" (the build time) makes the date change on every deploy even when
+// no page changed, and Google learns to ignore it. Bump this ONLY when the
+// content of the pages actually changes.
+const CONTENT_LAST_MODIFIED = new Date("2026-11-15");
 
-interface IndustrySlug {
+interface Slug {
   slug: string;
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // 1. Core static hub pages
-  const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: APP_URL,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: `${APP_URL}/ats-resume`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${APP_URL}/resume-keyword`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${APP_URL}/ats-friendly-resume-format`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${APP_URL}/legal/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${APP_URL}/legal/terms`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${APP_URL}/legal/refund`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+  const lastModified = CONTENT_LAST_MODIFIED;
+
+  // 1. Core static pages
+  const staticPaths = [
+    "",
+    ROLE_PATH,
+    INDUSTRY_PATH,
+    "/ats-friendly-resume-format",
+    "/legal/privacy",
+    "/legal/terms",
+    "/legal/refund",
   ];
 
-  // 2. Programmatic ATS Role Checker pages (259 pages)
-  const roleRoutes: MetadataRoute.Sitemap = (rolesData as RoleSlug[]).map(
+  const staticRoutes: MetadataRoute.Sitemap = staticPaths.map((path) => ({
+    url: `${APP_URL}${path}`,
+    lastModified,
+  }));
+
+  // 2. Programmatic ATS role pages (one page per job role)
+  const roleRoutes: MetadataRoute.Sitemap = (rolesData as Slug[]).map(
     (role) => ({
-      url: `${APP_URL}/ats-resume/${role.slug}`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
+      url: `${APP_URL}${ROLE_PATH}/${role.slug}`,
+      lastModified,
     })
   );
 
-  // 3. Programmatic Industry Keyword pages (282 pages)
-  const industryRoutes: MetadataRoute.Sitemap = (
-    industriesData as IndustrySlug[]
-  ).map((ind) => ({
-    url: `${APP_URL}/resume-keyword/${ind.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
+  // 3. Industry pages: only the real industry sectors. The other entries in
+  //    the data file are job roles and redirect to their role page, so they
+  //    must NOT be listed here (see lib/seo-routes.ts).
+  const industryRoutes: MetadataRoute.Sitemap = (industriesData as Slug[])
+    .filter((industry) => isSectorSlug(industry.slug))
+    .map((industry) => ({
+      url: `${APP_URL}${INDUSTRY_PATH}/${industry.slug}`,
+      lastModified,
+    }));
 
   return [...staticRoutes, ...roleRoutes, ...industryRoutes];
 }

@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import industriesData from "./data/industries-keywords.json";
+import {
+  INDUSTRY_PATH,
+  ROLE_PATH,
+  isSectorSlug,
+  roleSlugForIndustry,
+} from "./lib/seo-routes";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -53,6 +60,63 @@ const CSP_RESOURCE_RULES = [
 
 const enforceFullCsp = process.env.CSP_ENFORCE === "true";
 
+// 259 entries in industries-keywords.json are job roles, not industries. They
+// have no page of their own: /resume-keyword/<role> (and the older -checker /
+// -s URLs) go straight to /ats-resume/<role> in ONE hop. One grouped rule per
+// prefix keeps this to a handful of routes instead of hundreds. See
+// lib/seo-routes.ts.
+const roleEntrySlugs = (industriesData as { slug: string }[])
+  .map((entry) => entry.slug)
+  .filter((slug) => !isSectorSlug(slug));
+const sameSlugRoles = roleEntrySlugs.filter(
+  (slug) => roleSlugForIndustry(slug) === slug
+);
+const renamedRoles = roleEntrySlugs.filter(
+  (slug) => roleSlugForIndustry(slug) !== slug
+);
+
+// Next.js rejects a redirect `source` longer than 4096 characters, so the
+// slug list is split into several grouped rules, each safely below that.
+const MAX_SOURCE_CHARS = 3000;
+
+function chunkByLength(items: string[], maxChars: number): string[][] {
+  const chunks: string[][] = [];
+  let current: string[] = [];
+  let length = 0;
+  for (const item of items) {
+    if (current.length > 0 && length + item.length + 1 > maxChars) {
+      chunks.push(current);
+      current = [];
+      length = 0;
+    }
+    current.push(item);
+    length += item.length + 1;
+  }
+  if (current.length > 0) chunks.push(current);
+  return chunks;
+}
+
+const sameSlugRoleGroups = chunkByLength(sameSlugRoles, MAX_SOURCE_CHARS);
+
+function roleEntryRedirects() {
+  return [
+    INDUSTRY_PATH,
+    `${INDUSTRY_PATH}-checker`,
+    `${INDUSTRY_PATH}s`,
+  ].flatMap((prefix) => [
+    ...sameSlugRoleGroups.map((group) => ({
+      source: `${prefix}/:slug(${group.join("|")})`,
+      destination: `${ROLE_PATH}/:slug`,
+      permanent: true,
+    })),
+    ...renamedRoles.map((slug) => ({
+      source: `${prefix}/${slug}`,
+      destination: `${ROLE_PATH}/${roleSlugForIndustry(slug)}`,
+      permanent: true,
+    })),
+  ]);
+}
+
 const nextConfig: NextConfig = {
   async redirects() {
     return [
@@ -73,7 +137,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
-      // 2. Wildcard redirects for all 259+ roles and 282+ industries
+      // 2. Job-role entries -> role pages (must come BEFORE the wildcards
+      //    below so old URLs reach the role page in a single redirect)
+      ...roleEntryRedirects(),
+
+      // 3. Wildcard redirects for the renamed URL prefixes
       {
         source: "/ats-resume-checker/:slug*",
         destination: "/ats-resume/:slug*",

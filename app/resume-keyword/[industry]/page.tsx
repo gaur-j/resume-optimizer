@@ -17,6 +17,7 @@ import rawIndustries from "@/data/industries-keywords.json";
 import rawRoles from "@/data/ats-roles.json";
 import type { Industry } from "@/types/industry";
 import type { Role } from "@/types/role";
+import { industryHref, isSectorSlug } from "@/lib/seo-routes";
 import { ThemeToggle } from "@/components/Theme/ThemeToggle";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { AuthCTAButton, NavAuthLink } from "@/components/auth/AuthTriggers";
@@ -34,7 +35,10 @@ interface PageProps {
 
 // ---------- Helpers ----------
 
+// Only real industry sectors have a page. Entries that are job roles live at
+// /ats-resume/<role> (see lib/seo-routes.ts), so they are not found here.
 function getIndustry(slug: string): Industry | undefined {
+  if (!isSectorSlug(slug)) return undefined;
   return industriesData.find((i) => i.slug === slug);
 }
 
@@ -51,7 +55,9 @@ function safeJsonLd(data: unknown): string {
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  return industriesData.map((item) => ({ industry: item.slug }));
+  return industriesData
+    .filter((item) => isSectorSlug(item.slug))
+    .map((item) => ({ industry: item.slug }));
 }
 
 // ---------- SEO metadata ----------
@@ -91,8 +97,10 @@ export default async function IndustryKeywordsPage({ params }: PageProps) {
 
   if (!data) notFound();
 
+  // Related entries may be job roles; industryHref() sends those to the role
+  // page instead of a URL that would redirect.
   const relatedIndustries = (data.relatedIndustrySlugs ?? [])
-    .map((s) => getIndustry(s))
+    .map((s) => industriesData.find((i) => i.slug === s))
     .filter((i): i is Industry => Boolean(i));
 
   const relatedRoles = (data.relatedRoleSlugs ?? [])
@@ -416,7 +424,7 @@ export default async function IndustryKeywordsPage({ params }: PageProps) {
                 {relatedIndustries.map((i) => (
                   <Link
                     key={i.slug}
-                    href={`${BASE_PATH}/${i.slug}`}
+                    href={industryHref(i.slug)}
                     className="group flex items-center justify-between rounded-xl border border-border bg-card p-3.5 text-sm font-medium text-foreground transition-all hover:border-primary/50 hover:bg-secondary/50 shadow-(--shadow-xs)"
                   >
                     <span>{i.name}</span>
